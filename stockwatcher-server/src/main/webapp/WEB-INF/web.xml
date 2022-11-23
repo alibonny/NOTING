@@ -13,6 +13,10 @@
     <servlet-name>stockPrices</servlet-name>
     <url-pattern>/app/stockPrices</url-pattern>
   </servlet-mapping>
+  
+  <listener>
+    <listener-class>com.google.gwt.sample.stockwatcher.server.ListenerImpl</listener-class>
+  </listener>
 
 	<!-- Default page to serve -->
   <welcome-file-list>
