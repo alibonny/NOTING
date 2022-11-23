@@ -1,5 +1,7 @@
 # gwt-stockwatch-maven
-The GWT stockwatch demo application, maven flavor.
+[![Java CI with Maven](https://github.com/jjocram/gwt-stockwatch-maven/actions/workflows/maven.yml/badge.svg)](https://github.com/jjocram/gwt-stockwatch-maven/actions/workflows/maven.yml)
+
+The GWT stockwatch demo application, maven flavor and JUnit testing.
 
 To test it, run:
 
