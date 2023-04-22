@@ -192,11 +192,13 @@ public class StockWatcher implements EntryPoint {
 			@Override
 			public void onFailure(Throwable caught) {
 				// TODO Auto-generated method stub
+                GWT.log("ERROR CAUGHT");
 			}
 
 			@Override
 			public void onSuccess(StockPrice[] result) {
 				updateTable(result);
+                GWT.log("NO ERROR");
 			}
 		};
 

@@ -1,5 +1,6 @@
 package com.google.gwt.sample.stockwatcher.server;
 
+import com.google.gwt.sample.stockwatcher.shared.DelistedException;
 import com.google.gwt.sample.stockwatcher.shared.StockPrice;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,8 +21,12 @@ public class StockPriceServiceTest {
     @Test
     public void testGetPrices() {
         String[] symbols = new String[] {"FTSEMIB", "APL", "AMD", "INTC"};
-        StockPrice[] stockPrices = service.getPrices(symbols);
 
-        assertEquals(stockPrices.length, symbols.length);
+        try {
+            StockPrice[] stockPrices = service.getPrices(symbols);
+            assertEquals(stockPrices.length, symbols.length);
+        } catch (DelistedException e) {
+            // Do nothing
+        }
     }
 }

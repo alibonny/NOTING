@@ -9,6 +9,7 @@ import java.util.Set;
 
 import javax.servlet.ServletContext;
 
+import com.google.gwt.sample.stockwatcher.shared.DelistedException;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
@@ -23,10 +24,13 @@ public class StockPriceServiceImpl extends RemoteServiceServlet implements Stock
 	private static final double MAX_PRICE_CHANGE = 0.02; // +/- 2%
 
 	@Override
-	public StockPrice[] getPrices(String[] symbols) {
+	public StockPrice[] getPrices(String[] symbols) throws DelistedException {
 		Random rnd = new Random();
-	    StockPrice[] prices = new StockPrice[symbols.length];
+		StockPrice[] prices = new StockPrice[symbols.length];
 		for (int i=0; i<symbols.length; i++) {
+			if (symbols[i].equals("ERR")) {
+				throw new DelistedException("ERRORE");
+			}
 			double price = rnd.nextDouble() * MAX_PRICE;
 			double change = price * MAX_PRICE_CHANGE * (rnd.nextDouble() * 2f - 1f);
 
@@ -35,7 +39,7 @@ public class StockPriceServiceImpl extends RemoteServiceServlet implements Stock
 
 		return prices;
 	}
-	
+
 	@Override
 	public void saveSymbols(String[] symbols) {
 		DB db = getDB();

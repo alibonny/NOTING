@@ -58,6 +58,7 @@
               <extraClasspath>${basedir}/../stockwatcher-shared/target/classes/</extraClasspath>
             </webApp>
             <contextXml>${basedir}/src/main/jettyconf/context.xml</contextXml>
+            <jvmArgs>--add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</jvmArgs>
           </configuration>
         </plugin>
         <plugin>
