@@ -1,4 +1,4 @@
-package com.google.gwt.sample.stockwatcher.client;
+package com.google.gwt.sample.noting.client;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.uibinder.client.UiBinder;

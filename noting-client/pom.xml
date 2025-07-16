@@ -39,8 +39,8 @@
         <groupId>net.ltgt.gwt.maven</groupId>
         <artifactId>gwt-maven-plugin</artifactId>
        <configuration>
-          <moduleName>com.google.gwt.sample.stockwatcher.NotingApp</moduleName>
-          <moduleShortName>noting</moduleShortName>
+            <moduleName>com.google.gwt.sample.noting.NotingApp</moduleName>
+            <moduleShortName>noting</moduleShortName>
         </configuration>
       </plugin>
     </plugins>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.9.0//EN"
+  "http://gwtproject.org/doctype/2.9.0/gwt-module.dtd">
+
+<module rename-to='noting'>
+  <inherits name='com.google.gwt.user.User'/>
+
+  <inherits name='com.google.gwt.user.theme.standard.Standard'/>
+
+  <inherits name="com.google.gwt.http.HTTP" />
+
+  <entry-point class='com.google.gwt.sample.noting.client.NotingApp'/>
+
+  <source path='client'/>
+  <source path='shared'/>
+
+  <add-linker name="xsiframe"/>
+</module>

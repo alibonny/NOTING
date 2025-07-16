@@ -97,8 +97,8 @@
     </pluginManagement>
   </build>
   <modules>
-    <module>stockwatcher-client</module>
-    <module>stockwatcher-shared</module>
-    <module>stockwatcher-server</module>
+    <module>noting-client</module>
+    <module>noting-shared</module>
+    <module>noting-server</module>
   </modules>
 </project>
