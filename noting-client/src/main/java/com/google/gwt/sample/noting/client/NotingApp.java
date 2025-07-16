@@ -9,13 +9,13 @@ import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NoteServiceAsync;
 import com.google.gwt.sample.noting.shared.User;
 
-public class NotingApp implements EntryPoint {
+public class NotingApp implements EntryPoint{
 
     private final NoteServiceAsync noteService = GWT.create(NoteService.class);
 
     public void onModuleLoad() {
-        LoginView loginView = new LoginView();
-
+      
+        //LOGIN
         loginView.getLoginButton().addClickHandler(event -> {
             String username = loginView.getUsername();
             String password = loginView.getPassword();
@@ -32,6 +32,7 @@ public class NotingApp implements EntryPoint {
             });
         });
         
+        //REGISTRAZIONE 
         loginView.getRegisterButton().addClickHandler(event -> {
             noteService.register(loginView.getUsername(), loginView.getPassword(), new AsyncCallback<User>() {
                 public void onFailure(Throwable caught) {

@@ -1,49 +1,18 @@
-/** Add css rules here for your application. */
-body {
-    padding: 10px;
-}
-
-.watchListHeader {
-    background-color: #2062BB;
+.headerPanel {
+    background-color: #333; /* Un colore nero/grigio scuro */
     color: white;
-    font-style: italic;
+    padding: 10px;
+    margin-bottom: 20px;
+    display: flex; /* Per allineare gli elementi */
+    justify-content: space-between; /* Per mettere il logout a destra */
+    align-items: center;
 }
 
-.watchList {
-    border: 1px solid silver;
-    padding: 2px;
-    margin-bottom: 6px;
+.headerPanel a {
+    color: white; /* Rende il link del logout bianco */
+    text-decoration: none; /* Rimuove la sottolineatura */
 }
 
-.watchListNumericColumn {
-    text-align: right;
-    width: 8em;
-}
-
-.watchListRemoveColumn {
-  text-align: center;
-}
-
-.addPanel {
-  margin: 10px 0px 15px 0px;
-}
-
-.gwt-Button-remove {
-  width: 50px;
-}
-
-.noChange {
-  color: black;
-}
-
-.positiveChange {
-  color: green;
-}
-
-.negativeChange {
-  color: red;
-}
-
-.errorMessage {
-  color: red;
+.userInfo {
+    font-weight: bold;
 }
