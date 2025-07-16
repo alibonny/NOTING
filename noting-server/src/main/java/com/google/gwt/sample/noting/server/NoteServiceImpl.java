@@ -1,5 +1,7 @@
 package com.google.gwt.sample.noting.server;
 
+import java.util.concurrent.ConcurrentMap;
+
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
@@ -8,11 +10,42 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     @Override
     public User login(String username, String password) throws Exception {
-        // Logica di login super semplificata per il test
-        if ("test".equals(username) && "test".equals(password)) {
-            return new User(username);
+        if (username == null || password == null) {
+            System.out.println("USERNAME E PASSWORD NON POSSONO ESSERE VUOTI.");
+            throw new Exception("Username e password non possono essere vuoti.");
+        }
+
+        ConcurrentMap<String, String> users = DBManager.getUsersDatabase();
+        String storedPassword = users.get(username);
+
+        if (storedPassword != null && storedPassword.equals(password)) {
+            System.out.println("LOGIN RIUSCITO PER:  " + username);
+            return new User(username); // Login corretto
+            
         } else {
-            throw new Exception("Username o password non validi");
+            System.out.println("CREDENZIALI NON VALIDE");
+            throw new Exception("Credenziali non valide.");
         }
     }
+
+    @Override
+    public User register(String username, String password) throws Exception {
+        if (username == null || username.trim().isEmpty() || password == null || password.isEmpty()) {
+            System.out.println("USERNAME E PASSWORD NON POSSONO ESSERE VUOTI.");
+            throw new Exception("Username e password non possono essere vuoti.");
+        }
+
+        ConcurrentMap<String, String> users = DBManager.getUsersDatabase();
+        
+        // putIfAbsent è atomico e thread-safe
+        if (users.putIfAbsent(username.trim(), password) == null) {
+            DBManager.commit(); // Salva permanentemente la modifica sul file
+            System.out.println("Nuovo utente registrato con MapDB: " + username);
+            return new User(username.trim()); // Registrazione completata
+        } else {
+            System.out.println(username + " USERNAME GIà ESISTENTE.");
+            throw new Exception("Username già esistente.");
+        }
+    }
+
 }

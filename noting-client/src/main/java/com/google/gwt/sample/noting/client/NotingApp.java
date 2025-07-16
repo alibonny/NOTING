@@ -24,17 +24,43 @@ public class NotingApp implements EntryPoint {
                 public void onFailure(Throwable caught) {
                     Window.alert("Errore di login: " + caught.getMessage());
                 }
+
                 public void onSuccess(User result) {
-                    Window.alert("Login effettuato con successo! Benvenuto " + result.getUsername());
-                    // Qui caricheremo l'interfaccia principale dell'app
+                    // SE IL LOGIN HA SUCCESSO, CAMBIA SCHERMATA
+                    loadHomeScreen(result);
+                }
+            });
+        });
+        
+        loginView.getRegisterButton().addClickHandler(event -> {
+            noteService.register(loginView.getUsername(), loginView.getPassword(), new AsyncCallback<User>() {
+                public void onFailure(Throwable caught) {
+                     Window.alert("Errore di registrazione: " + caught.getMessage());
+                }
+                public void onSuccess(User result) {
+                    Window.alert("Registrazione completata! Ora puoi effettuare il login.");
                 }
             });
         });
 
-        // Per ora rimuoviamo la logica di registrazione per semplificare
-        loginView.getRegisterButton().setVisible(false);
-
-        // Assicurati che nel tuo HTML ci sia un div con id="root"
+        // Mostra la vista di login all'avvio
         RootPanel.get("root").add(loginView);
+    }
+    
+    /**
+     * Metodo per caricare la schermata principale dopo il login.
+     * @param loggedInUser L'utente che ha effettuato l'accesso.
+    */
+
+    private void loadHomeScreen(User loggedInUser) {
+        // pulizia schermata
+        RootPanel.get("root").clear();
+        
+        // creazione nuova istanza vista 
+        HomeView homeView = new HomeView();
+   
+        RootPanel.get("root").add(homeView);
+        
+        //Window.alert("Benvenuto " + loggedInUser.getUsername() + "!"); 
     }
 }
