@@ -9,5 +9,5 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 public interface NoteService extends RemoteService {
     User login(String username, String password) throws Exception;
     User register(String username, String password) throws Exception;
-
+    void logout();
 }

@@ -5,7 +5,6 @@ import java.io.Serializable;
 public class User implements Serializable {
     private String username;
 
-    // Costruttore vuoto per la serializzazione
     public User() {}
 
     public User(String username) {
@@ -14,5 +13,9 @@ public class User implements Serializable {
 
     public String getUsername() {
         return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

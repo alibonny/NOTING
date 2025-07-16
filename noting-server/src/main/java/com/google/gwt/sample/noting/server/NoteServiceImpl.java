@@ -2,12 +2,24 @@ package com.google.gwt.sample.noting.server;
 
 import java.util.concurrent.ConcurrentMap;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 public class NoteServiceImpl extends RemoteServiceServlet implements NoteService {
 
+    @Override
+    public void logout() {
+        HttpServletRequest request = this.getThreadLocalRequest();
+        HttpSession session = request.getSession(false); // Non creare una nuova sessione se non esiste
+        if (session != null) {
+            session.invalidate();
+        }
+    }
+    
     @Override
     public User login(String username, String password) throws Exception {
         if (username == null || password == null) {
