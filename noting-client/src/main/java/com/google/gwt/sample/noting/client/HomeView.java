@@ -20,6 +20,9 @@ public class HomeView extends Composite {
     @UiField
     Button logoutButton;
 
+    @UiField
+    Button createNoteButton;
+
     public HomeView(User user) {
         initWidget(uiBinder.createAndBindUi(this));
         usernameLabel.setText("Benvenuto, " + user.getUsername());
@@ -27,5 +30,9 @@ public class HomeView extends Composite {
 
     public Button getLogoutButton() {
         return logoutButton;
+    }
+
+    public Button getCreateNoteButton() {
+        return createNoteButton;
     }
 }

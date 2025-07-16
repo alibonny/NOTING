@@ -11,7 +11,7 @@
         <g:Label text="Password:"/>
         <g:PasswordTextBox ui:field="passwordBox"/>
 
-        <g:Button ui:field="loginButton" text="Login"/>
+        <g:Button ui:field="loginButton" text="Login" styleName="bottoneLogin"/>
         <g:Button ui:field="registerButton" text="Registrati"/>
     </g:VerticalPanel>
 

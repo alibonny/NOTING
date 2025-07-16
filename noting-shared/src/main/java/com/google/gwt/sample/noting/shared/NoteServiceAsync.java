@@ -2,8 +2,12 @@ package com.google.gwt.sample.noting.shared;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
+//Viene usata da Client
+// è un interfaccia asincrona, che GWT GENERA AUTOMATICAMENTE
+
 public interface NoteServiceAsync {
     void login(String username, String password, AsyncCallback<User> callback);
     void register(String username, String password, AsyncCallback<User> callback);
     void logout(AsyncCallback<Void> async);
+    void creazioneNota(AsyncCallback<Void> async);
 }

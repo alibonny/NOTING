@@ -1,3 +1,13 @@
+.bottoneLogin{
+    background-color: #4CAF50; /* Un colore verde */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+
 .headerPanel {
     background-color: #333; /* Un colore nero/grigio scuro */
     color: white;
@@ -8,11 +18,15 @@
     align-items: center;
 }
 
-.headerPanel a {
-    color: white; /* Rende il link del logout bianco */
+.pulsante_logout {
+    color: goldenrod; /* Rende il link del logout bianco */
     text-decoration: none; /* Rimuove la sottolineatura */
 }
 
 .userInfo {
     font-weight: bold;
+    color: tomato;
 }
+
+
+    

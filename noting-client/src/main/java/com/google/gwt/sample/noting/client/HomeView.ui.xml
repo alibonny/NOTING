@@ -3,12 +3,15 @@
              xmlns:g="urn:import:com.google.gwt.user.client.ui">
 
     <g:HTMLPanel>
-        <g:HorizontalPanel verticalAlignment="ALIGN_MIDDLE">
-            <g:Label ui:field="usernameLabel" styleName="gwt-Label-header"/>
-            <g:Button ui:field="logoutButton" text="Logout" styleName="gwt-Button-logout"/>
+        <g:HorizontalPanel verticalAlignment="ALIGN_MIDDLE" styleName="headerPanel">
+            <g:Label ui:field="usernameLabel" styleName="userInfo"/>
+            <g:Button ui:field="logoutButton" text="Logout" styleName="pulsante_logout"/>
         </g:HorizontalPanel>
         <hr/>
         <g:Label text="Benvenuto nella tua dashboard!"/>
+
+        <g:Button ui:field="createNoteButton" text="Crea Nota" styleName="gwt-Button-creaNota"/>
+
     </g:HTMLPanel>
 
 </ui:UiBinder>
