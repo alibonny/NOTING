@@ -4,22 +4,22 @@
 
   <parent>
     <groupId>com.google.gwt.sample</groupId>
-    <artifactId>stockwatcher</artifactId>
+    <artifactId>noting</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>stockwatcher-client</artifactId>
+  <artifactId>noting-client</artifactId>
   <packaging>gwt-app</packaging>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>stockwatcher-shared</artifactId>
+      <artifactId>noting-shared</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>stockwatcher-shared</artifactId>
+      <artifactId>noting-shared</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
     </dependency>
@@ -38,9 +38,9 @@
       <plugin>
         <groupId>net.ltgt.gwt.maven</groupId>
         <artifactId>gwt-maven-plugin</artifactId>
-        <configuration>
-          <moduleName>com.google.gwt.sample.stockwatcher.App</moduleName>
-          <moduleShortName>app</moduleShortName>
+       <configuration>
+          <moduleName>com.google.gwt.sample.stockwatcher.NotingApp</moduleName>
+          <moduleShortName>noting</moduleShortName>
         </configuration>
       </plugin>
     </plugins>

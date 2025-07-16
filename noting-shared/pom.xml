@@ -4,11 +4,11 @@
 
   <parent>
     <groupId>com.google.gwt.sample</groupId>
-    <artifactId>stockwatcher</artifactId>
+    <artifactId>noting</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>stockwatcher-shared</artifactId>
+  <artifactId>noting-shared</artifactId>
 
   <dependencies>
     <dependency>

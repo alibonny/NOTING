@@ -5,18 +5,17 @@
 
   <parent>
     <groupId>com.google.gwt.sample</groupId>
-    <artifactId>stockwatcher</artifactId>
+    <artifactId>noting</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>stockwatcher-server</artifactId>
+  <artifactId>noting-server</artifactId>
   <packaging>war</packaging>
 
   <dependencies>
-
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>stockwatcher-shared</artifactId>
+      <artifactId>noting-shared</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -33,18 +32,17 @@
       <artifactId>mapdb</artifactId>
       <version>3.0.8</version>
     </dependency>
-      <dependency>
-          <groupId>org.junit.jupiter</groupId>
-          <artifactId>junit-jupiter-api</artifactId>
-          <version>5.9.0</version>
-          <scope>test</scope>
-      </dependency>
-      <dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-			<version>2.10</version>
-		</dependency>
-
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.9.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.10</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -56,7 +54,7 @@
           <configuration>
             <scanIntervalSeconds>1</scanIntervalSeconds>
             <webApp>
-              <extraClasspath>${basedir}/../stockwatcher-shared/target/classes/</extraClasspath>
+              <extraClasspath>${basedir}/../noting-shared/target/classes/</extraClasspath>
             </webApp>
             <contextXml>${basedir}/src/main/jettyconf/context.xml</contextXml>
             <jvmArgs>--add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</jvmArgs>
@@ -77,7 +75,6 @@
 
   <profiles>
     <profile>
-      <!-- XXX: We want to exclude gwttest-client from 'env-dev' profile, Maven forces us to make a 'env-prod' profile -->
       <id>env-prod</id>
       <activation>
         <activeByDefault>true</activeByDefault>
@@ -85,7 +82,7 @@
       <dependencies>
         <dependency>
           <groupId>${project.groupId}</groupId>
-          <artifactId>stockwatcher-client</artifactId>
+          <artifactId>noting-client</artifactId>
           <version>${project.version}</version>
           <type>war</type>
           <scope>compile</scope>
