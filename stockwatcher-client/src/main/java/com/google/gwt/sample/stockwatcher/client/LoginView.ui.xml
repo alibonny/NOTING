@@ -1,0 +1,18 @@
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+             xmlns:g="urn:import:com.google.gwt.user.client.ui">
+
+    <g:VerticalPanel spacing="10">
+        <g:Label text="Benvenuto! Accedi o Registrati" styleName="gwt-Label-header"/>
+
+        <g:Label text="Username:"/>
+        <g:TextBox ui:field="usernameBox"/>
+
+        <g:Label text="Password:"/>
+        <g:PasswordTextBox ui:field="passwordBox"/>
+
+        <g:Button ui:field="loginButton" text="Login"/>
+        <g:Button ui:field="registerButton" text="Registrati"/>
+    </g:VerticalPanel>
+
+</ui:UiBinder>
