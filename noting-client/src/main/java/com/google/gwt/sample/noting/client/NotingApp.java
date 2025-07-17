@@ -1,20 +1,17 @@
-package com.google.gwt.sample.noting.client;
+/*package com.google.gwt.sample.noting.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NoteServiceAsync;
 import com.google.gwt.sample.noting.shared.User;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.RootPanel;
 
 public class NotingApp implements EntryPoint{
 
     //La classe NoteServiceAsync viene utilizzata per effettuare chiamate asincrone al servizio di backend.
     // con questa instanziazzione GWT generea il codice che comunica con il server
     private final NoteServiceAsync noteService = GWT.create(NoteService.class);
-    private LoginView loginView;
+    private LoginView loginView = new LoginView();
     private HomeView homeView;
     private CreateNoteView createNote;
     private User loggedInUser; //     
@@ -22,19 +19,20 @@ public class NotingApp implements EntryPoint{
     public void onModuleLoad() {
         GWT.log("Modulo GWT caricato");
 
-        loadLoginView();
+        loginView.loadLoginView();
     }
-     
-     private void loadLoginView() {
+    /* 
+     public void loadLoginView() {
         loginView = new LoginView();
 
-        setupLoginViewHandlers();
+        loginView.setupLoginViewHandlers();
 
         RootPanel.get("root").clear();
         RootPanel.get("root").add(loginView);
     }
+    */
 
-    //LOGIN
+  /*   //LOGIN
     private void setupLoginViewHandlers() {
         loginView.getLoginButton().addClickHandler(event -> {
             // con questa chiamata GWT manda la richiesta al server dove NoteServiceImpl.login viene eseguito 
@@ -49,6 +47,7 @@ public class NotingApp implements EntryPoint{
                 }
             });
         });
+        
 
         //REGISTRAZIONE 
         loginView.getRegisterButton().addClickHandler(event -> {
@@ -70,8 +69,8 @@ public class NotingApp implements EntryPoint{
      * Metodo per caricare la schermata principale dopo il login.
      * @param loggedInUser L'utente che ha effettuato l'accesso.
     */
-
-    private void loadHomeView(User loggedInUser) {
+     /* 
+    public  void loadHomeView(User loggedInUser) {
         homeView = new HomeView(loggedInUser);
         // Imposta i gestori degli eventi per la HomeView
         // Questo metodo viene chiamato per associare i gestori degli eventi ai pulsanti della HomeView.
@@ -118,7 +117,7 @@ public class NotingApp implements EntryPoint{
 
        
 
-    }
+   } 
        private void loadCreateNoteView() {
         createNote = new CreateNoteView();
         // Imposta i gestori degli eventi per la HomeView
@@ -140,4 +139,36 @@ public class NotingApp implements EntryPoint{
 
         }
 
+}*/
+
+package com.google.gwt.sample.noting.client;
+
+import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.sample.noting.shared.NoteService;
+import com.google.gwt.sample.noting.shared.NoteServiceAsync;
+import com.google.gwt.sample.noting.shared.User;
+
+public class NotingApp implements EntryPoint {
+
+    private final NoteServiceAsync noteService = GWT.create(NoteService.class);
+    private LoginView loginView;
+    private HomeView homeView;
+
+    public void onModuleLoad() {
+        GWT.log("Modulo GWT caricato");
+        loadLoginView();
+    }
+
+    private void loadLoginView() {
+        loginView = new LoginView();
+        loginView.setLoginSuccessListener(user -> loadHomeView(user));
+        loginView.loadLoginView();
+    }
+
+    private void loadHomeView(User user) {
+        homeView = new HomeView(user);
+        homeView.setLogoutListener(() -> loadLoginView());
+        homeView.loadHomeView();
+    }
 }
