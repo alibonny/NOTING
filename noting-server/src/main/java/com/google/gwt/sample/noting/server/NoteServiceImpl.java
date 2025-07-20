@@ -62,10 +62,17 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
 
     @Override
-    public void creazioneNota() {
+    public void creazioneNota(String titolo, String contenuto) {
         // Implementazione della logica per la creazione di una nota
         // Questa parte del codice dovrebbe essere completata in base alle specifiche del progetto.
         System.out.println("Creazione nota non ancora implementata.");
+    }
+
+    @Override
+    public void eliminaUltimaNota() {
+        // Implementazione della logica per eliminare l'ultima nota
+        // Questa parte del codice dovrebbe essere completata in base alle specifiche del progetto.
+        System.out.println("Eliminazione ultima nota non ancora implementata.");
     }
 
 }

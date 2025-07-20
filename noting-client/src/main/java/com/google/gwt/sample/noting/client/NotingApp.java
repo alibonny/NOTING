@@ -148,27 +148,155 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NoteServiceAsync;
 import com.google.gwt.sample.noting.shared.User;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.RootPanel;
+
 
 public class NotingApp implements EntryPoint {
 
-    private final NoteServiceAsync noteService = GWT.create(NoteService.class);
+    private final NoteServiceAsync service = GWT.create(NoteService.class);
     private LoginView loginView;
     private HomeView homeView;
+    private User loggedInUser;
+
 
     public void onModuleLoad() {
-        GWT.log("Modulo GWT caricato");
-        loadLoginView();
-    }
+        LoginView loginView = new LoginView();
 
+        loginView.setLogListener(new LogListener() {
+            @Override
+            public void onLogin(String username, String password) {
+              //  NoteServiceAsync service = GWT.create(NoteService.class);
+
+                service.login(username, password, new AsyncCallback<User>() {
+                    @Override
+                    public void onSuccess(User user) {
+                        HomeView home = new HomeView(user);
+                        RootPanel.get().clear();
+                        RootPanel.get().add(home);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Login fallito: " + caught.getMessage());
+                    }
+                });
+            }
+        });
+
+        RootPanel.get().add(loginView);
+    }
+/*
     private void loadLoginView() {
         loginView = new LoginView();
-        loginView.setLoginSuccessListener(user -> loadHomeView(user));
+        loginView.setLogListener(new LogListener() {
+            public void onLogin(String username, String password) {
+                GWT.log("Tentativo di login con: " + username);
+            }
+
+            public void onLoginSuccess(User user) {
+                loggedInUser = user;
+                loadHomeView(user);
+            }
+
+            public void onLoginError(Throwable caught) {
+                Window.alert("Login fallito: " + caught.getMessage());
+            }
+
+            public void onLogout() {
+                GWT.log("Logout richiesto...");
+            }
+
+            public void onLogoutSuccess() {
+                Window.alert("Logout eseguito correttamente.");
+                loadLoginView();
+            }
+
+            public void onLogoutError(Throwable caught) {
+                Window.alert("Errore durante il logout: " + caught.getMessage());
+            }
+        });
+
         loginView.loadLoginView();
     }
 
+      
+
+
+
+
+
+
+
+
+
     private void loadHomeView(User user) {
-        homeView = new HomeView(user);
-        homeView.setLogoutListener(() -> loadLoginView());
-        homeView.loadHomeView();
+    homeView = new HomeView(user);
+    
+    homeView.setHomeViewListener(new HomeViewListener() {
+       // public void onLogoutRequested() {
+        //    loadLoginView(); // logout
+        //}
+
+        public void onCreateNote() {
+            loadCreateNoteView(); // crea nota
+        }
+    });
+
+    homeView.loadHomeView();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void loadCreateNoteView() {
+    CreateNoteView createNoteView = new CreateNoteView();
+
+    RootPanel.get("root").clear();
+    RootPanel.get("root").add(createNoteView);
+}
+
+
+
+
+// Istanzia la view di login
+        LoginView loginView = new LoginView();
+
+        // Imposta il listener per gestire il successo del login
+        loginView.setLoginSuccessListener(new LoginSuccessListener() {
+            @Override
+            public void onLoginSuccess(User user) {
+                // Quando il login ha successo, mostra la HomeView
+                HomeView homeView = new HomeView(user);
+
+                // Svuota la pagina e inserisce la nuova schermata
+                RootPanel.get().clear();
+                RootPanel.get().add(homeView);
+            }
+        });
+
+        // Mostra la schermata di login all'avvio
+        RootPanel.get().add(loginView);
     }
+
+/* */
 }

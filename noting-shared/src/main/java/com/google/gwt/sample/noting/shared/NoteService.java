@@ -15,6 +15,7 @@ public interface NoteService extends RemoteService {
     User login(String username, String password) throws Exception;
     User register(String username, String password) throws Exception;
     void logout();
-    void creazioneNota();
+    void creazioneNota(String titolo, String contenuto);
+    void eliminaUltimaNota();
 
 }

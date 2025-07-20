@@ -119,7 +119,11 @@ import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.PasswordTextBox;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.Widget;
 
 public class LoginView extends Composite {
 
@@ -139,36 +143,38 @@ public class LoginView extends Composite {
     Button registerButton;
 
     private final NoteServiceAsync noteService = GWT.create(NoteService.class);
-    private LoginSuccessListener loginSuccessListener;
+    private LogListener logListener;
+
+    
+//"Chiamami quando succede qualcosa!"
+    public void setLogListener(LogListener listener) {
+        this.logListener = listener;
+    }
+
+    public LogListener getLogListener() {
+        return logListener;
+    }
 
     public LoginView() {
         initWidget(uiBinder.createAndBindUi(this));
+     
+        setupHandlers();
+       
     }
+  
 
-    public void setLoginSuccessListener(LoginSuccessListener listener) {
-        this.loginSuccessListener = listener;
-    }
+    private void setupHandlers() {    
+        
+        
+    loginButton.addClickHandler(event -> {
+    String username = usernameBox.getText();
+    String password = passwordBox.getText();
 
-    public void loadLoginView() {
-        setupLoginViewHandlers();
-        RootPanel.get("root").clear();
-        RootPanel.get("root").add(this);
-    }
+    if (logListener != null) {
+        logListener.onLogin(username, password);
+      }
+    });
 
-    private void setupLoginViewHandlers() {
-        loginButton.addClickHandler(event -> {
-            noteService.login(getUsername(), getPassword(), new AsyncCallback<User>() {
-                public void onFailure(Throwable caught) {
-                    Window.alert("Errore di login: " + caught.getMessage());
-                }
-
-                public void onSuccess(User result) {
-                    if (loginSuccessListener != null) {
-                        loginSuccessListener.onLoginSuccess(result);
-                    }
-                }
-            });
-        });
 
         registerButton.addClickHandler(event -> {
             noteService.register(getUsername(), getPassword(), new AsyncCallback<User>() {

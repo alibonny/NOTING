@@ -103,8 +103,11 @@ import com.google.gwt.sample.noting.shared.NoteServiceAsync;
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.Widget;
 
 public class HomeView extends Composite {
 
@@ -121,42 +124,54 @@ public class HomeView extends Composite {
     Button createNoteButton;
 
     private final NoteServiceAsync noteService = GWT.create(NoteService.class);
-    private LogoutListener logoutListener;
+    private LogListener logListener;
+    private HomeViewListener homelistener;
+
 
     public HomeView(User user) {
         initWidget(uiBinder.createAndBindUi(this));
         usernameLabel.setText("Benvenuto, " + user.getUsername());
     }
 
-    public void setLogoutListener(LogoutListener listener) {
-        this.logoutListener = listener;
+  public void setLogListener(LogListener listener) {
+        this.logListener = listener;
     }
+    public void setHomeViewListener(HomeViewListener listener) {
+    this.homelistener = listener;
+   }
 
     public void loadHomeView() {
-        setupHomeViewHandlers();
+        //setupHandlers();
         RootPanel.get("root").clear();
         RootPanel.get("root").add(this);
     }
-
-    private void setupHomeViewHandlers() {
+/* 
+    
+    private void setupHandlers() {
         logoutButton.addClickHandler(event -> {
+            if (logListener != null) {
+                logListener.onLogout();
+            }
+
             noteService.logout(new AsyncCallback<Void>() {
-                @Override
                 public void onFailure(Throwable caught) {
-                    // gestisci errore
+                    if (logListener != null) {
+                        logListener.onLogoutError(caught);
+                    }
                 }
 
-                @Override
                 public void onSuccess(Void result) {
-                    if (logoutListener != null) {
-                        logoutListener.onLogout();
+                    if (logListener != null) {
+                        logListener.onLogoutSuccess();
                     }
                 }
             });
         });
 
         createNoteButton.addClickHandler(event -> {
-            // gestisci creazione nota (opzionale da implementare in seguito)
+            if (homelistener != null) {
+                homelistener.onCreateNote();
+            }
         });
-    }
+    } */
 }
