@@ -1,6 +1,7 @@
 package com.google.gwt.sample.noting.server;
 
 import java.io.File;
+import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.ServletContextEvent;
@@ -9,20 +10,21 @@ import javax.servlet.annotation.WebListener;
 
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.mapdb.Serializer;
 
-// CLASSE CHE SI OCCUPA DELL'APERTURA DEL DB ALL'AVVIO E DELLA SUA CORRETTA CHIUSURA 
+import com.google.gwt.sample.noting.shared.Note;
 
 @WebListener
 public class DBManager implements ServletContextListener {
 
     private static DB db;
     private static ConcurrentMap<String, String> usersDatabase;
+    private static ConcurrentMap<String, List<Note>> notesDatabase; // Mappa per le note
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         System.out.println("Inizializzazione del database MapDB...");
         
-        // percorso del file del database all'interno della webapp
         String dbPath = sce.getServletContext().getRealPath("/WEB-INF/noting.db");
         File dbFile = new File(dbPath);
         dbFile.getParentFile().mkdirs();
@@ -32,13 +34,15 @@ public class DBManager implements ServletContextListener {
                     .closeOnJvmShutdown()
                     .make();
 
-        // Ottiene la mappa degli utenti (o la crea se non esiste)
-        usersDatabase = db.hashMap("users", org.mapdb.Serializer.STRING, org.mapdb.Serializer.STRING).createOrOpen();
+        // Mappa degli utenti
+        usersDatabase = db.hashMap("users", Serializer.STRING, Serializer.STRING).createOrOpen();
         
-        // Aggiungi un utente di default se la mappa è vuota
+        // Mappa delle note
+        notesDatabase = db.hashMap("notes", Serializer.STRING, Serializer.JAVA).createOrOpen();
+
         if (usersDatabase.isEmpty()) {
             usersDatabase.put("test", "test");
-            db.commit(); // Salva le modifiche
+            db.commit();
             System.out.println("Utente di default 'test' creato.");
         }
         
@@ -55,6 +59,10 @@ public class DBManager implements ServletContextListener {
 
     public static ConcurrentMap<String, String> getUsersDatabase() {
         return usersDatabase;
+    }
+    
+    public static ConcurrentMap<String, List<Note>> getNotesDatabase() {
+        return notesDatabase;
     }
     
     public static void commit() {

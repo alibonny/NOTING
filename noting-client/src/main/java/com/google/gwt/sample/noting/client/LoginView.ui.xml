@@ -2,17 +2,20 @@
 <ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
              xmlns:g="urn:import:com.google.gwt.user.client.ui">
 
-    <g:VerticalPanel spacing="10">
-        <g:Label text="Benvenuto! Accedi o Registrati" styleName="gwt-Label-header"/>
+    <g:VerticalPanel spacing="10" styleName="login-panel">
+        <g:Label text="Benvenuto! Accedi o Registrati" styleName="label-header"/>
 
         <g:Label text="Username:"/>
-        <g:TextBox ui:field="usernameBox"/>
+        <g:TextBox ui:field="usernameBox" styleName="input"/>
 
         <g:Label text="Password:"/>
-        <g:PasswordTextBox ui:field="passwordBox"/>
+        <g:PasswordTextBox ui:field="passwordBox" styleName="input"/>
 
-        <g:Button ui:field="loginButton" text="Login" styleName="bottoneLogin"/>
-        <g:Button ui:field="registerButton" text="Registrati"/>
+        <g:HorizontalPanel spacing="10" styleName="button-panel">
+            <g:Button ui:field="loginButton" text="Login" styleName="bottoneLogin"/>
+            <g:Button ui:field="registerButton" text="Registrati" styleName="bottoneLogin"/>
+        </g:HorizontalPanel>
+        
     </g:VerticalPanel>
 
 </ui:UiBinder>

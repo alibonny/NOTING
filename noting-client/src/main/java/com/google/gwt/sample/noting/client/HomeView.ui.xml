@@ -5,12 +5,12 @@
     <g:HTMLPanel>
         <g:HorizontalPanel verticalAlignment="ALIGN_MIDDLE" styleName="headerPanel">
             <g:Label ui:field="usernameLabel" styleName="userInfo"/>
-            <g:Button ui:field="logoutButton" text="Logout" styleName="pulsante_logout"/>
+            <g:Button ui:field="logoutButton" text="Logout" styleName="bottoneLogin"/>
         </g:HorizontalPanel>
         <hr/>
-        <g:Label text="Benvenuto nella tua dashboard!"/>
+        <g:Label text="Benvenuto nella tua dashboard!" styleName="label2"/>
 
-        <g:Button ui:field="createNoteButton" text="Crea Nota" styleName="gwt-Button-creaNota"/>
+        <g:Button ui:field="createNoteButton" text="Crea Nota" styleName="bottoneLogin"/>
 
     </g:HTMLPanel>
 

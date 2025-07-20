@@ -97,8 +97,8 @@
     </pluginManagement>
   </build>
   <modules>
-    <module>noting-client</module>
     <module>noting-shared</module>
+    <module>noting-client</module>
     <module>noting-server</module>
   </modules>
 </project>
