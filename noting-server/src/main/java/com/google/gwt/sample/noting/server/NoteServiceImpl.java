@@ -92,4 +92,19 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     public void eliminaUltimaNota() {
         // Implementazione non richiesta
     }
+
+    @Override
+    public List<Note> getNoteUtente() throws NotingException {
+    HttpSession session = getThreadLocalRequest().getSession(false);
+    if (session == null || session.getAttribute("user") == null) {
+        throw new NotingException("Utente non autenticato.");
+    }
+
+    User user = (User) session.getAttribute("user");
+    ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+
+    List<Note> noteUtente = notesDB.get(user.getUsername());
+    return (noteUtente != null) ? noteUtente : new ArrayList<>();
+}
+
 }

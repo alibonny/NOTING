@@ -1,7 +1,10 @@
 package com.google.gwt.sample.noting.client;
 
+import java.util.List;
+
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NoteServiceAsync;
 import com.google.gwt.sample.noting.shared.User;
@@ -68,7 +71,25 @@ public class NotingApp implements EntryPoint {
             public void onCreateNote() {
                 loadCreateNoteView();
             }
+
+             @Override
+            public void onNoteSelected(Note note) {
+                loadVisualizzaNota(note);
+            }
         });
+
+        service.getNoteUtente(new AsyncCallback<List<Note>>() {
+            @Override
+            public void onSuccess(List<Note> result) {
+                homeView.setNotes(result);
+            }
+
+            @Override
+            public void onFailure(Throwable caught) {
+                Window.alert("Errore nel caricamento delle note: " + caught.getMessage());
+            }
+        });
+
 
         RootPanel.get().clear();
         RootPanel.get().add(homeView);
@@ -103,4 +124,15 @@ public class NotingApp implements EntryPoint {
         RootPanel.get().clear();
         RootPanel.get().add(createNoteView);
     }
+
+    private void loadVisualizzaNota(Note nota) {
+        VisualizzaNotaView view = new VisualizzaNotaView(nota);
+
+        view.setVisualizzaNotaViewListener(() -> loadHomeView());
+
+        RootPanel.get().clear();
+        RootPanel.get().add(view);
+    }
+
+
 }

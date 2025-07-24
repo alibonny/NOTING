@@ -1,5 +1,7 @@
 package com.google.gwt.sample.noting.shared;
 
+import java.util.List;
+
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 
@@ -10,4 +12,5 @@ public interface NoteService extends RemoteService {
     void logout();
     void creazioneNota(String titolo, String contenuto) throws NotingException;
     void eliminaUltimaNota();
+    List<Note> getNoteUtente() throws NotingException;
 }

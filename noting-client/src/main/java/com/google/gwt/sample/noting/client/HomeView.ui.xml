@@ -12,6 +12,7 @@
 
         <g:Button ui:field="createNoteButton" text="Crea Nota" styleName="bottoneLogin"/>
 
+        <g:VerticalPanel ui:field="noteListPanel" width="100%" spacing="10"/>
     </g:HTMLPanel>
 
 </ui:UiBinder>

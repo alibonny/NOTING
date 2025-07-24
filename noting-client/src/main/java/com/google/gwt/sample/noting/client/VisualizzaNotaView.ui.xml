@@ -1,0 +1,18 @@
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+             xmlns:g="urn:import:com.google.gwt.user.client.ui">
+
+    <g:HTMLPanel styleName="form-panel">
+
+        <g:Label text="Nota" styleName="label-header" />
+        
+        <g:Label text="Titolo:" styleName="label2" />
+        <g:Label ui:field="titoloLabel" styleName="note-title" />
+
+        <g:Label text="Contenuto:" styleName="label2" />
+        <g:TextArea ui:field="contenutoArea" styleName="note-textarea" enabled="false" />
+
+        <g:Button ui:field="backButton" text="Torna alla Home" styleName="bottoneLogin" />
+
+    </g:HTMLPanel>
+</ui:UiBinder>

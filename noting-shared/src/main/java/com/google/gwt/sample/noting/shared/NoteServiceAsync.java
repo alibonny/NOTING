@@ -1,5 +1,7 @@
 package com.google.gwt.sample.noting.shared;
 
+import java.util.List;
+
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
 //Viene usata da Client
@@ -11,5 +13,6 @@ public interface NoteServiceAsync {
     void logout(AsyncCallback<Void> async);
     void creazioneNota(String titolo, String contenuto, AsyncCallback<Void> callback);
     void eliminaUltimaNota(AsyncCallback<Void> callback);
+    void getNoteUtente(AsyncCallback<List<Note>> callback);
 
 }
