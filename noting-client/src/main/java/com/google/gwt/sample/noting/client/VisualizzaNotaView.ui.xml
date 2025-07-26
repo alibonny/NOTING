@@ -4,15 +4,16 @@
 
     <g:HTMLPanel styleName="form-panel">
 
-        <g:Label text="Nota" styleName="label-header" />
+        <g:Label ui:field="titoloLabel" styleName="label-header" />
+        <g:TextBox ui:field="titoloBox" styleName="note-input"/>
         
-        <g:Label text="Titolo:" styleName="label2" />
-        <g:Label ui:field="titoloLabel" styleName="note-title" />
-
-        <g:Label text="Contenuto:" styleName="label2" />
-        <g:TextArea ui:field="contenutoArea" styleName="note-textarea" enabled="false" />
-
-        <g:Button ui:field="backButton" text="Torna alla Home" styleName="bottoneLogin" />
+        <g:TextArea ui:field="contenutoArea" styleName="note-textarea" />
+        
+        <g:HorizontalPanel spacing="10" styleName="button-panel">
+            <g:Button ui:field="modificaButton" text="Modifica" />
+            <g:Button ui:field="salvaButton" text="Salva" />
+            <g:Button ui:field="backButton" text="Torna alla Home" styleName="bottoneLogin" />
+        </g:HorizontalPanel>
 
     </g:HTMLPanel>
 </ui:UiBinder>

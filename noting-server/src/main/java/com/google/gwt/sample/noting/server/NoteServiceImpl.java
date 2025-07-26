@@ -13,6 +13,8 @@ import com.google.gwt.sample.noting.shared.NotingException;
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
+import org.mapdb.Atomic;
+
 public class NoteServiceImpl extends RemoteServiceServlet implements NoteService {
 
     @Override
@@ -80,6 +82,13 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
             if (userNotes == null) {
                 userNotes = new ArrayList<>();
             }
+
+             // Assegna ID univoco alla nuova nota
+            Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
+            int newId = noteIdCounter.get();
+            noteIdCounter.set(newId + 1);
+            nuovaNota.setId(newId);
+
             userNotes.add(nuovaNota);
             notesDB.put(username, userNotes);
         }
@@ -105,6 +114,75 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     List<Note> noteUtente = notesDB.get(user.getUsername());
     return (noteUtente != null) ? noteUtente : new ArrayList<>();
-}
+    }
 
+    @Override
+    public void updateNota(Note notaModificata) throws NotingException {
+        HttpServletRequest request = getThreadLocalRequest();
+        HttpSession session = request.getSession(false);
+
+        if (session == null || session.getAttribute("user") == null) {
+            throw new NotingException("Utente non autenticato.");
+        }
+
+        User user = (User) session.getAttribute("user");
+        String username = user.getUsername();
+
+        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+        Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
+
+        synchronized (username.intern()) {
+            List<Note> userNotes = notesDB.get(username);
+            if (userNotes == null) {
+                userNotes = new ArrayList<>();
+            }
+
+            if (notaModificata.getId() <= 0) {
+                // nuova nota
+                //int newId = noteIdCounter.get();
+                //noteIdCounter.set(newId + 1);
+                //notaModificata.setId(newId);
+                //userNotes.add(notaModificata);
+                //System.out.println("Creata nuova nota ID: " + newId);
+                System.out.println("LA NOTA CHE VUOI AGGIORNARE NON è STATA TROVATA");
+            } else {
+                // nota esistente
+                boolean updated = false;
+                for (int i = 0; i < userNotes.size(); i++) {
+                    if (userNotes.get(i).getId() == notaModificata.getId()) {
+                        userNotes.set(i, notaModificata);
+                        updated = true;
+                        System.out.println("Aggiornata nota ID: " + notaModificata.getId());
+                        break;
+                    }
+                }
+                if (!updated) throw new NotingException("Nota non trovata.");
+            }
+
+            notesDB.put(username, userNotes);
+        }
+
+        DBManager.commit();
+        System.out.println("Nota aggiornata da " + username + " con titolo: " + notaModificata.getTitle());
+    }
+
+
+    @Override
+    public void eliminaNota(String username, int notaId) throws NotingException {
+        if (username == null) {
+            throw new NotingException("Utente non autenticato.");
+        }
+
+        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+        synchronized (username.intern()) {
+            List<Note> userNotes = notesDB.get(username);
+            if (userNotes != null) {
+                userNotes.removeIf(n -> n.getId() == notaId);
+                notesDB.put(username, userNotes);
+            }
+        }
+
+        DBManager.commit();
+    }
+    
 }

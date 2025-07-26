@@ -14,5 +14,7 @@ public interface NoteServiceAsync {
     void creazioneNota(String titolo, String contenuto, AsyncCallback<Void> callback);
     void eliminaUltimaNota(AsyncCallback<Void> callback);
     void getNoteUtente(AsyncCallback<List<Note>> callback);
+    void updateNota(Note notaModificata, AsyncCallback<Void> callback);
+    void eliminaNota(String username, int notaId, AsyncCallback<Void> callback);
 
 }

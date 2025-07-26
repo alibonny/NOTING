@@ -13,22 +13,50 @@ public class VisualizzaNotaView extends Composite {
     interface VisualizzaNotaViewUiBinder extends UiBinder<Widget, VisualizzaNotaView> {}
     private static VisualizzaNotaViewUiBinder uiBinder = GWT.create(VisualizzaNotaViewUiBinder.class);
 
-    @UiField Label titoloLabel;
+    @UiField TextBox titoloBox;
     @UiField TextArea contenutoArea;
+    @UiField Button salvaButton;
+    @UiField Button modificaButton;
     @UiField Button backButton;
 
     private VisualizzaNotaViewListener listener;
+    private Note nota; //così salviamo la nota corrente
 
     public VisualizzaNotaView(Note nota) {
         initWidget(uiBinder.createAndBindUi(this));
-        titoloLabel.setText(nota.getTitle());
+        this.nota = nota;
+        titoloBox.setText(nota.getTitle());
         contenutoArea.setText(nota.getContent());
         contenutoArea.setReadOnly(true);
+
+        // il bottone salva è inizialmente disattivato, viene attivato quando si effettuano modifiche
+        salvaButton.setVisible(false);
     }
 
     public void setVisualizzaNotaViewListener(VisualizzaNotaViewListener listener) {
         this.listener = listener;
     }
+
+    @UiHandler("modificaButton")
+    void onModificaClick(ClickEvent e) {
+        contenutoArea.setReadOnly(false);
+        salvaButton.setVisible(true); // mostra il pulsante "Salva"
+    }
+
+    @UiHandler("salvaButton")
+    void onSalvaClick(ClickEvent e) {
+        contenutoArea.setReadOnly(true);
+        salvaButton.setVisible(false);
+
+        // aggiorna il contenuto nella nota
+        nota.setContent(contenutoArea.getText());
+
+        if (listener != null) {
+            listener.onSalvaNota(nota);
+        }
+    }
+
+
 
     @UiHandler("backButton")
     void onBackClick(ClickEvent e) {

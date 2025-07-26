@@ -11,6 +11,7 @@ import javax.servlet.annotation.WebListener;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
+import org.mapdb.Atomic;
 
 import com.google.gwt.sample.noting.shared.Note;
 
@@ -20,6 +21,8 @@ public class DBManager implements ServletContextListener {
     private static DB db;
     private static ConcurrentMap<String, String> usersDatabase;
     private static ConcurrentMap<String, List<Note>> notesDatabase; // Mappa per le note
+    private static Atomic.Var<Integer> noteIdCounter;
+
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -39,6 +42,11 @@ public class DBManager implements ServletContextListener {
         
         // Mappa delle note
         notesDatabase = db.hashMap("notes", Serializer.STRING, Serializer.JAVA).createOrOpen();
+
+        noteIdCounter = db.atomicVar("noteIdCounter", Serializer.INTEGER).createOrOpen();
+        if (noteIdCounter.get() == null) {
+        noteIdCounter.set(1);
+        }
 
         if (usersDatabase.isEmpty()) {
             usersDatabase.put("test", "test");
@@ -69,5 +77,9 @@ public class DBManager implements ServletContextListener {
         if (db != null && !db.isClosed()) {
             db.commit();
         }
+    }
+
+    public static Atomic.Var<Integer> getNoteIdCounter() {
+    return noteIdCounter;
     }
 }

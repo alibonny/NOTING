@@ -125,14 +125,36 @@ public class NotingApp implements EntryPoint {
         RootPanel.get().add(createNoteView);
     }
 
-    private void loadVisualizzaNota(Note nota) {
-        VisualizzaNotaView view = new VisualizzaNotaView(nota);
+   private void loadVisualizzaNota(Note nota) {
+    VisualizzaNotaView view = new VisualizzaNotaView(nota);
 
-        view.setVisualizzaNotaViewListener(() -> loadHomeView());
+    view.setVisualizzaNotaViewListener(new VisualizzaNotaViewListener() {
+        @Override
+        public void onBack() {
+            loadHomeView(); // torna alla home
+        }
 
-        RootPanel.get().clear();
-        RootPanel.get().add(view);
-    }
+        @Override
+        public void onSalvaNota(Note notaModificata) {
+            service.updateNota(notaModificata, new AsyncCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    Window.alert("Nota salvata con successo!");
+                    loadHomeView(); // torna alla home dopo il salvataggio
+                }
+
+                @Override
+                public void onFailure(Throwable caught) {
+                    Window.alert("Errore nel salvataggio: " + caught.getMessage());
+                }
+            });
+        }
+    });
+
+    RootPanel.get().clear();
+    RootPanel.get().add(view);
+}
+
 
 
 }
