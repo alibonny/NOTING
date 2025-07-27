@@ -6,6 +6,7 @@ import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Window; 
 import com.google.gwt.user.client.ui.*;
 
 public class VisualizzaNotaView extends Composite {
@@ -17,6 +18,7 @@ public class VisualizzaNotaView extends Composite {
     @UiField TextArea contenutoArea;
     @UiField Button salvaButton;
     @UiField Button modificaButton;
+    @UiField Button eliminaButton;
     @UiField Button backButton;
 
     private VisualizzaNotaViewListener listener;
@@ -56,7 +58,14 @@ public class VisualizzaNotaView extends Composite {
         }
     }
 
-
+    @UiHandler("eliminaButton")
+    void onEliminaClick(ClickEvent e) {
+        // mostra un dialog di conferma
+        boolean confirm = Window.confirm("Elimina definitivamente?");
+        if (confirm && listener != null) {
+            listener.onEliminaNota(nota);
+        }
+    }
 
     @UiHandler("backButton")
     void onBackClick(ClickEvent e) {

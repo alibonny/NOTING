@@ -12,6 +12,7 @@
         <g:HorizontalPanel spacing="10" styleName="button-panel">
             <g:Button ui:field="modificaButton" text="Modifica" />
             <g:Button ui:field="salvaButton" text="Salva" />
+            <g:Button ui:field="eliminaButton" text="Elimina" />
             <g:Button ui:field="backButton" text="Torna alla Home" styleName="bottoneLogin" />
         </g:HorizontalPanel>
 

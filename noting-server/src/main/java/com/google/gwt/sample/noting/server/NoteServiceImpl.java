@@ -181,6 +181,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         return noteUtente.stream()
             .filter(n -> 
                 n.getTitle().toLowerCase().contains(query.toLowerCase()) ||
+                n.getContent().toLowerCase().contains(query.toLowerCase())
             )
             .collect(Collectors.toList());
     }

@@ -4,4 +4,5 @@ import com.google.gwt.sample.noting.shared.Note;
 public interface VisualizzaNotaViewListener {
     void onBack();
     void onSalvaNota(Note nota);
+    void onEliminaNota(Note nota);
 }

@@ -163,6 +163,22 @@ public class NotingApp implements EntryPoint {
                 }
             });
         }
+
+        @Override
+        public void onEliminaNota(Note notaDaEliminare) {
+            service.eliminaNota(loggedInUser.getUsername(), notaDaEliminare.getId(), new AsyncCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    Window.alert("Nota eliminata con successo!");
+                    loadHomeView();
+                }
+
+                @Override
+                public void onFailure(Throwable caught) {
+                    Window.alert("Errore durante l'eliminazione: " + caught.getMessage());
+                }
+            });
+        }
     });
 
     RootPanel.get().clear();
