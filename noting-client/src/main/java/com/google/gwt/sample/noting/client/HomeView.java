@@ -14,6 +14,7 @@ import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.TextBox;
 
 public class HomeView extends Composite {
 
@@ -24,6 +25,8 @@ public class HomeView extends Composite {
     @UiField Button logoutButton;
     @UiField Button createNoteButton;
     @UiField VerticalPanel noteListPanel;
+    @UiField TextBox searchBox;
+    @UiField Button searchButton;
 
     private HomeViewListener listener;
 
@@ -60,6 +63,13 @@ public class HomeView extends Composite {
     void onCreateNoteClick(ClickEvent e) {
         if (listener != null) {
             listener.onCreateNote();
+        }
+    }
+
+    @UiHandler("searchButton")
+    void onSearchClick(ClickEvent e) {
+        if (listener != null) {
+            listener.onSearch(searchBox.getText());
         }
     }
 }

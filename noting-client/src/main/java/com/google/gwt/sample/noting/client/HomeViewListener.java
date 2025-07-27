@@ -6,4 +6,5 @@ public interface HomeViewListener {
     void onCreateNote();
     void onLogout();
     void onNoteSelected(Note note);
+    void onSearch(String query);
 }

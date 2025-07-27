@@ -76,6 +76,20 @@ public class NotingApp implements EntryPoint {
             public void onNoteSelected(Note note) {
                 loadVisualizzaNota(note);
             }
+
+            @Override
+            public void onSearch(String query) {
+                service.searchNotes(query, new AsyncCallback<List<Note>>() {
+                    @Override
+                    public void onSuccess(List<Note> results) {
+                        homeView.setNotes(results); // Mostra i risultati nella lista esistente
+                    }
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore ricerca: " + caught.getMessage());
+                    }
+                });
+            }
         });
 
         service.getNoteUtente(new AsyncCallback<List<Note>>() {

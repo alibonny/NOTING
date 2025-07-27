@@ -1,3 +1,12 @@
+#logo {
+    width: 100px;
+    height: auto;
+    position: absolute;
+    top: 5px;
+    left: 10px;
+    z-index: 1000;
+}
+
 html, body{
     margin:1rem;
     font-family: sans-serif;
@@ -11,6 +20,7 @@ html, body{
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .headerPanel {
@@ -102,4 +112,29 @@ html, body{
     border: 1px solid #ccc;
     border-radius: 4px;
     resize: vertical; 
+}
+
+/* Stile per la riga dei pulsanti */
+.headerButtonRow {
+    display: flex;
+    align-items: center;
+    gap: 0px;
+    margin: 0px 0;
+    width: 100%;
+}
+
+/* Barra di ricerca allungata */
+.search-input {
+    width: 200px;
+    height: auto;
+    padding: 8px 12px;
+    border: 1px solid black;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Allineamento verticale */
+.align-middle {
+    display: flex;
+    align-items: center;
 }

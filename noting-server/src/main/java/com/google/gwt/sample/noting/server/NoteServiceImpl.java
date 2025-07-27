@@ -3,6 +3,7 @@ package com.google.gwt.sample.noting.server;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -166,6 +167,23 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         System.out.println("Nota aggiornata da " + username + " con titolo: " + notaModificata.getTitle());
     }
 
+    @Override
+    public List<Note> searchNotes(String query) throws NotingException {
+        HttpSession session = getThreadLocalRequest().getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            throw new NotingException("Utente non autenticato.");
+        }
+
+        User user = (User) session.getAttribute("user");
+        List<Note> noteUtente = DBManager.getNotesDatabase().get(user.getUsername());
+        if (noteUtente == null) return new ArrayList<>();
+
+        return noteUtente.stream()
+            .filter(n -> 
+                n.getTitle().toLowerCase().contains(query.toLowerCase()) ||
+            )
+            .collect(Collectors.toList());
+    }
 
     @Override
     public void eliminaNota(String username, int notaId) throws NotingException {
