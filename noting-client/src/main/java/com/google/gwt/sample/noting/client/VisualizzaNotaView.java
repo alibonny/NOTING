@@ -6,8 +6,13 @@ import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.Window; 
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.TextArea;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.Widget;
 
 public class VisualizzaNotaView extends Composite {
 
@@ -20,6 +25,7 @@ public class VisualizzaNotaView extends Composite {
     @UiField Button modificaButton;
     @UiField Button eliminaButton;
     @UiField Button backButton;
+    @UiField ListBox statoBox; // per mostrare lo stato della nota
 
     private VisualizzaNotaViewListener listener;
     private Note nota; //così salviamo la nota corrente
@@ -30,6 +36,12 @@ public class VisualizzaNotaView extends Composite {
         titoloBox.setText(nota.getTitle());
         contenutoArea.setText(nota.getContent());
         contenutoArea.setReadOnly(true);
+
+        for (Note.Stato stato : Note.Stato.values()) {
+            statoBox.addItem(stato.name());
+        }
+
+        statoBox.setEnabled(false); // disabilita la modifica dello stato
 
         // il bottone salva è inizialmente disattivato, viene attivato quando si effettuano modifiche
         salvaButton.setVisible(false);
@@ -43,6 +55,7 @@ public class VisualizzaNotaView extends Composite {
     void onModificaClick(ClickEvent e) {
         contenutoArea.setReadOnly(false);
         salvaButton.setVisible(true); // mostra il pulsante "Salva"
+        statoBox.setEnabled(true); // abilita la modifica dello stato
     }
 
     @UiHandler("salvaButton")
@@ -52,6 +65,11 @@ public class VisualizzaNotaView extends Composite {
 
         // aggiorna il contenuto nella nota
         nota.setContent(contenutoArea.getText());
+
+        String statoSelezionato = statoBox.getSelectedValue(); // o getSelectedItemText().replace(" ", "")
+        nota.setStato(Note.Stato.valueOf(statoSelezionato));
+        Window.alert("Nota salvata con successo!\nTitolo: " + titoloBox.getText() + "\nStato: " + statoSelezionato);
+
 
         if (listener != null) {
             listener.onSalvaNota(nota);

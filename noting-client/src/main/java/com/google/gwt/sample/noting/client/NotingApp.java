@@ -114,8 +114,8 @@ public class NotingApp implements EntryPoint {
 
         createNoteView.setCreateNoteViewListener(new CreateNoteViewListener() {
             @Override
-            public void onSave(String titolo, String contenuto) {
-                service.creazioneNota(titolo, contenuto, new AsyncCallback<Void>() {
+            public void onSave(String titolo, String contenuto, Note.Stato stato) {
+                service.creazioneNota(titolo, contenuto, stato, new AsyncCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         Window.alert("Nota salvata con successo!");

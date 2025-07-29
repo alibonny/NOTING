@@ -12,9 +12,15 @@
         <g:Label text="Contenuto:" styleName="label2"/>
         <g:TextArea ui:field="contenutoBox" styleName="note-textarea"/>
 
+        <g:Label text="Stato:" styleName="label2"/>
+        <g:ListBox ui:field="statoBox" styleName="note-select">
+           
+        </g:ListBox>
+
+
         <g:HorizontalPanel spacing="10" styleName="button-panel">
-            <g:Button ui:field="saveButton" text="Salva" styleName="bottoneLogin"/>
-            <g:Button ui:field="backButton" text="Torna alla Home" styleName="bottoneLogin"/>
+            <g:Button ui:field="saveButton" text="Salva" styleName="bottoneSave"/>
+            <g:Button ui:field="backButton" text="Torna alla Home" styleName="bottoneBack"/>
         </g:HorizontalPanel>
 
     </g:HTMLPanel>

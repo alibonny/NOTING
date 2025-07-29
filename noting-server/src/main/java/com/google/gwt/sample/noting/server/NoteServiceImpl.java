@@ -8,13 +8,13 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import org.mapdb.Atomic;
+
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NotingException; 
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-
-import org.mapdb.Atomic;
 
 public class NoteServiceImpl extends RemoteServiceServlet implements NoteService {
 
@@ -64,7 +64,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     }
 
     @Override
-    public void creazioneNota(String titolo, String contenuto) throws NotingException {
+    public void creazioneNota(String titolo, String contenuto, Note.Stato stato) throws NotingException {
         HttpServletRequest request = this.getThreadLocalRequest();
         HttpSession session = request.getSession(false);
 
@@ -74,10 +74,23 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
         User user = (User) session.getAttribute("user");
         String username = user.getUsername();
+
+    /*   // piccola pulizia
+        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+
+        notesDB.clear();
+        DBManager.getNoteIdCounter().set(0);
+        DBManager.commit();
+    */  
+
         
-        Note nuovaNota = new Note(titolo, contenuto, username);
+        Note nuovaNota = new Note(titolo, contenuto, stato ,username);
         ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
         
+       
+
+
+
         synchronized(username.intern()) {
             List<Note> userNotes = notesDB.get(username);
             if (userNotes == null) {
@@ -95,7 +108,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         }
 
         DBManager.commit();
-        System.out.println("Nota creata da " + username + " con titolo: " + titolo);
+        System.out.println("Nota creata da " + username + " con titolo: " + titolo + " e stato: " + stato.name());
     }
 
     @Override

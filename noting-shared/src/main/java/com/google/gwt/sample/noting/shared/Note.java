@@ -7,14 +7,20 @@ public class Note implements Serializable {
     private String content;
     private String ownerUsername;
     private int id;
+    private Stato stato;
+
+    public enum Stato {
+        Privata,Condivisa,CondivisaSCR
+    }
 
     // Costruttore vuoto necessario per la serializzazione GWT
     public Note() {}
 
-    public Note(String title, String content, String ownerUsername) {
+    public Note(String title, String content, Stato stato ,String ownerUsername) {
         this.id = 0; // ID temporaneo: sarà assegnato automaticamente lato server
         this.title = title;
         this.content = content;
+        this.stato = stato;
         this.ownerUsername = ownerUsername;
     }
 
@@ -50,4 +56,11 @@ public class Note implements Serializable {
         this.id = id;
     }
 
+    public Stato getStato() {
+        return stato;
+    }   
+    
+    public void setStato(Stato stato) {
+        this.stato = stato;
+    }
 }

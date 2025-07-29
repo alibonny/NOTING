@@ -11,7 +11,7 @@ public interface NoteServiceAsync {
     void login(String username, String password, AsyncCallback<User> callback);
     void register(String username, String password, AsyncCallback<User> callback);
     void logout(AsyncCallback<Void> async);
-    void creazioneNota(String titolo, String contenuto, AsyncCallback<Void> callback);
+    void creazioneNota(String titolo, String contenuto,Note.Stato stato ,AsyncCallback<Void> callback);
     void eliminaUltimaNota(AsyncCallback<Void> callback);
     void getNoteUtente(AsyncCallback<List<Note>> callback);
     void updateNota(Note notaModificata, AsyncCallback<Void> callback);

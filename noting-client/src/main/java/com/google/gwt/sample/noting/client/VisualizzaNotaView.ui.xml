@@ -8,7 +8,13 @@
         <g:TextBox ui:field="titoloBox" styleName="note-input"/>
         
         <g:TextArea ui:field="contenutoArea" styleName="note-textarea" />
-        
+
+        <g:Label text="Stato:" styleName="label2"/>
+        <g:ListBox ui:field="statoBox" styleName="note-select">
+           
+        </g:ListBox>  
+
+
         <g:HorizontalPanel spacing="10" styleName="button-panel">
             <g:Button ui:field="modificaButton" text="Modifica" />
             <g:Button ui:field="salvaButton" text="Salva" />
