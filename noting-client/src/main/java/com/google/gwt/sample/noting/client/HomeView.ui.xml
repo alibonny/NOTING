@@ -20,7 +20,7 @@
             </g:HorizontalPanel>
         </g:HorizontalPanel>
 
-        <g:VerticalPanel ui:field="noteListPanel" width="100%" spacing="10"/>
+        <g:FlowPanel ui:field="noteListPanel" width="100%" styleName="noteGridPanel"/>
     </g:HTMLPanel>
 
 </ui:UiBinder>

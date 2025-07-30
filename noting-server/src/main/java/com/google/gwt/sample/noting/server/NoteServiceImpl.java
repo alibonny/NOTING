@@ -86,11 +86,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         
         Note nuovaNota = new Note(titolo, contenuto, stato ,username);
         ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
-        
-       
-
-
-
+     
         synchronized(username.intern()) {
             List<Note> userNotes = notesDB.get(username);
             if (userNotes == null) {

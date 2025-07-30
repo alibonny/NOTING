@@ -9,6 +9,7 @@ import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
@@ -22,9 +23,8 @@ public class CreateNoteView extends Composite {
     @UiField TextBox titoloBox;
     @UiField TextArea contenutoBox;
     @UiField Button saveButton;
-    @UiField Button backButton;
     @UiField ListBox statoBox;
-
+    @UiField HTML backLink;
 
     private CreateNoteViewListener listener;
 
@@ -40,26 +40,25 @@ public class CreateNoteView extends Composite {
         this.listener = listener;
     }
 
-    @UiHandler("saveButton")
+   @UiHandler("saveButton")
     void onSaveClick(ClickEvent e) {
-        System.out.println("Salvataggio nota: " + titoloBox.getText());
-       
-        String statoSelezionato = statoBox.getSelectedItemText()
-        .replace(" ", "");
+        String titolo = titoloBox.getText();
+        String contenuto = contenutoBox.getText();
+        String statoSelezionato = statoBox.getSelectedItemText().replace(" ", "");
+        Note.Stato stato = Note.Stato.valueOf(statoSelezionato);
 
-         Note.Stato stato = Note.Stato.valueOf(statoSelezionato);
-         Window.alert("Salvataggio nota: " + titoloBox.getText() + "\nStato selezionato:"
-         + stato.name());
-
+        if (titolo.trim().isEmpty() || contenuto.trim().isEmpty()) {
+            Window.alert("Titolo e contenuto non possono essere vuoti!");
+            return;
+        }
 
         if (listener != null) {
-
-            listener.onSave(statoSelezionato, statoSelezionato, stato);
+            listener.onSave(titolo, contenuto, stato);
         }
     }
 
-    @UiHandler("backButton")
-    void onBackClick(ClickEvent e) {
+   @UiHandler("backLink")
+    void onBackLinkClick(ClickEvent e) {
         if (listener != null) {
             listener.onBack();
         }

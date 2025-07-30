@@ -4,6 +4,8 @@
 
     <g:HTMLPanel styleName="form-panel">
         
+        <g:HTML ui:field="backLink" styleName="back-link">&lt; Torna alla Home</g:HTML>
+
         <g:Label text="Crea una nuova Nota" styleName="label-header"/>
 
         <g:Label text="Titolo:" styleName="label2"/>
@@ -12,15 +14,13 @@
         <g:Label text="Contenuto:" styleName="label2"/>
         <g:TextArea ui:field="contenutoBox" styleName="note-textarea"/>
 
-        <g:Label text="Stato:" styleName="label2"/>
-        <g:ListBox ui:field="statoBox" styleName="note-select">
-           
-        </g:ListBox>
+        <g:HorizontalPanel spacing="10" verticalAlignment="ALIGN_MIDDLE" styleName="button-panel">
+            
+            <g:Label text="Stato:" styleName="label2"/>
+            <g:ListBox ui:field="statoBox" styleName="status" />
+            
+            <g:Button ui:field="saveButton" text="Salva" styleName="bottoneLogin"/>
 
-
-        <g:HorizontalPanel spacing="10" styleName="button-panel">
-            <g:Button ui:field="saveButton" text="Salva" styleName="bottoneSave"/>
-            <g:Button ui:field="backButton" text="Torna alla Home" styleName="bottoneBack"/>
         </g:HorizontalPanel>
 
     </g:HTMLPanel>

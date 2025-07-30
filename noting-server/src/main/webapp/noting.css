@@ -123,7 +123,6 @@ html, body{
     width: 100%;
 }
 
-/* Barra di ricerca allungata */
 .search-input {
     width: 200px;
     height: auto;
@@ -133,8 +132,82 @@ html, body{
     font-size: 14px;
 }
 
-/* Allineamento verticale */
 .align-middle {
     display: flex;
     align-items: center;
+}
+
+.status {
+    background-color: #f2f2f2;
+    border: 1px solid #ccc;  
+    border-radius: 5px;        
+    padding: 8px;          
+    font-size: 16px;           
+    cursor: pointer;
+}
+
+.status:hover {
+    border-color: #888;
+}
+
+/*VISUALIZZAZIONE POST IT*/
+.noteGridPanel {
+    display: flex;          
+    flex-wrap: wrap;       
+    gap: 25px;              
+    padding-top: 20px;     
+}
+
+.noteItem {
+    width: 150px;
+    height: 150px;
+    padding: 20px;          
+    box-sizing: border-box; 
+    cursor: pointer;
+
+    /* immagine di sfondo */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    /* testo del titolo */
+    display: flex;
+    align-items: center;       
+    justify-content: center;    
+    text-align: center;
+    word-wrap: break-word;      
+    font-family: sans-serif;
+    font-weight: bold;
+    color: black;            
+
+    background-color: transparent;
+    border: none;
+    box-shadow: none; 
+
+    transition: transform 0.2s;
+}
+
+.noteItem:hover {
+    transform: scale(1.05); 
+}
+
+.nota-privata-img {
+    background-image: url('images/postit_privata.png');
+}
+
+.nota-condivisa-img {
+    background-image: url('images/postit_condivisa.png');
+}
+
+/*LINK TORNA ALLA HOME*/
+.back-link {
+    display: block; 
+    margin-bottom: 20px; 
+    color: purple;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    text-decoration: underline; 
 }

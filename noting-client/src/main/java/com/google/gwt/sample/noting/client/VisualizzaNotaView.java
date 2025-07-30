@@ -9,6 +9,7 @@ import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
@@ -24,7 +25,7 @@ public class VisualizzaNotaView extends Composite {
     @UiField Button salvaButton;
     @UiField Button modificaButton;
     @UiField Button eliminaButton;
-    @UiField Button backButton;
+    @UiField HTML backLink;
     @UiField ListBox statoBox; // per mostrare lo stato della nota
 
     private VisualizzaNotaViewListener listener;
@@ -85,8 +86,8 @@ public class VisualizzaNotaView extends Composite {
         }
     }
 
-    @UiHandler("backButton")
-    void onBackClick(ClickEvent e) {
+   @UiHandler("backLink")
+    void onBackLinkClick(ClickEvent e) {
         if (listener != null) {
             listener.onBack();
         }

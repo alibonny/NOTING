@@ -4,22 +4,19 @@
 
     <g:HTMLPanel styleName="form-panel">
 
-        <g:Label ui:field="titoloLabel" styleName="label-header" />
+        <g:HTML ui:field="backLink" styleName="back-link">&lt; Torna alla Home</g:HTML>
+        
         <g:TextBox ui:field="titoloBox" styleName="note-input"/>
         
         <g:TextArea ui:field="contenutoArea" styleName="note-textarea" />
 
         <g:Label text="Stato:" styleName="label2"/>
-        <g:ListBox ui:field="statoBox" styleName="note-select">
-           
-        </g:ListBox>  
-
+        <g:ListBox ui:field="statoBox" styleName="note-select"/>  
 
         <g:HorizontalPanel spacing="10" styleName="button-panel">
-            <g:Button ui:field="modificaButton" text="Modifica" />
-            <g:Button ui:field="salvaButton" text="Salva" />
-            <g:Button ui:field="eliminaButton" text="Elimina" />
-            <g:Button ui:field="backButton" text="Torna alla Home" styleName="bottoneLogin" />
+            <g:Button ui:field="modificaButton" text="Modifica" styleName="bottoneLogin"/>
+            <g:Button ui:field="salvaButton" text="Salva" styleName="bottoneLogin"/>
+            <g:Button ui:field="eliminaButton" text="Elimina" styleName="bottoneLogin"/>
         </g:HorizontalPanel>
 
     </g:HTMLPanel>

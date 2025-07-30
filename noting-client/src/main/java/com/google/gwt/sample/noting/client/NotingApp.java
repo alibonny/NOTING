@@ -13,7 +13,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.RootPanel;
 
 public class NotingApp implements EntryPoint {
-
+    
     private final NoteServiceAsync service = GWT.create(NoteService.class);
     private User loggedInUser; // Mantiene lo stato dell'utente loggato
 
@@ -82,7 +82,8 @@ public class NotingApp implements EntryPoint {
                 service.searchNotes(query, new AsyncCallback<List<Note>>() {
                     @Override
                     public void onSuccess(List<Note> results) {
-                        homeView.setNotes(results); // Mostra i risultati nella lista esistente
+                        homeView.setNotes(results);
+                       
                     }
                     @Override
                     public void onFailure(Throwable caught) {
@@ -90,6 +91,7 @@ public class NotingApp implements EntryPoint {
                     }
                 });
             }
+
         });
 
         service.getNoteUtente(new AsyncCallback<List<Note>>() {
