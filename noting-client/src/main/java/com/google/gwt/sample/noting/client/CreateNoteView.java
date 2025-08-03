@@ -1,6 +1,9 @@
 package com.google.gwt.sample.noting.client;
 
+import java.util.List;
+
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.uibinder.client.UiBinder;
@@ -23,8 +26,12 @@ public class CreateNoteView extends Composite {
     @UiField TextBox titoloBox;
     @UiField TextArea contenutoBox;
     @UiField Button saveButton;
+
     @UiField ListBox statoBox;
+    @UiField ListBox userListBox; // Aggiunto per la selezione dell'utente
+
     @UiField HTML backLink;
+
 
     private CreateNoteViewListener listener;
 
@@ -38,6 +45,30 @@ public class CreateNoteView extends Composite {
 
     public void setCreateNoteViewListener(CreateNoteViewListener listener) {
         this.listener = listener;
+    }
+
+    @UiHandler("statoBox")
+void onStatoBoxChange(ChangeEvent event) {
+    String selectedValue = statoBox.getSelectedValue();
+    // oppure:
+    // String selectedText = statoBox.getItemText(statoBox.getSelectedIndex());
+    Window.alert("Hai selezionato: " + selectedValue);
+    if(listener != null && (selectedValue == "Condivisa" || selectedValue=="CondivisaSCR")) {
+        listener.mostraUtenti(); // Notifica il listener della selezione dello stato
+    }
+
+    
+}
+
+public void setUserList(List<String> usernames) {
+        userListBox.clear();
+        for (String username : usernames) {
+            userListBox.addItem(username);
+        }
+    }
+
+    public String getSelectedUser() {
+        return userListBox.getSelectedItemText();
     }
 
    @UiHandler("saveButton")

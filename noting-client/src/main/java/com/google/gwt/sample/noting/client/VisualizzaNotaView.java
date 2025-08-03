@@ -30,6 +30,7 @@ public class VisualizzaNotaView extends Composite {
 
     private VisualizzaNotaViewListener listener;
     private Note nota; //così salviamo la nota corrente
+    protected Note.Stato stato; // per tenere traccia dello stato della nota
 
     public VisualizzaNotaView(Note nota) {
         initWidget(uiBinder.createAndBindUi(this));
@@ -41,6 +42,8 @@ public class VisualizzaNotaView extends Composite {
         for (Note.Stato stato : Note.Stato.values()) {
             statoBox.addItem(stato.name());
         }
+
+        statoBox.setSelectedIndex(nota.getStato().ordinal()); // imposta lo stato corrente della nota
 
         statoBox.setEnabled(false); // disabilita la modifica dello stato
 
@@ -57,6 +60,10 @@ public class VisualizzaNotaView extends Composite {
         contenutoArea.setReadOnly(false);
         salvaButton.setVisible(true); // mostra il pulsante "Salva"
         statoBox.setEnabled(true); // abilita la modifica dello stato
+
+        if (listener != null) {
+            listener.onStatoNotaChanged(nota, stato);; // notifica il listener che si sta modificando la nota
+        }
     }
 
     @UiHandler("salvaButton")
@@ -73,7 +80,7 @@ public class VisualizzaNotaView extends Composite {
 
 
         if (listener != null) {
-            listener.onSalvaNota(nota);
+            listener.onSalvaNota(nota, nota.getStato()); // notifica il listener che la nota è stata salvata
         }
     }
 

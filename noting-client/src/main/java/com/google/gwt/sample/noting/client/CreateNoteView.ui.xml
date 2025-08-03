@@ -18,7 +18,10 @@
             
             <g:Label text="Stato:" styleName="label2"/>
             <g:ListBox ui:field="statoBox" styleName="status" />
-            
+            <g:ListBox ui:field="userListBox" styleName="user-dropdown" />
+
+
+
             <g:Button ui:field="saveButton" text="Salva" styleName="bottoneLogin"/>
 
         </g:HorizontalPanel>

@@ -132,6 +132,21 @@ public class NotingApp implements EntryPoint {
             }
 
             @Override
+            public void mostraUtenti() {
+                service.getAllUsernames(new AsyncCallback<List<String>>() {
+                    @Override
+                    public void onSuccess(List<String> usernames) {
+                        createNoteView.setUserList(usernames); // Imposta la lista degli utenti nel ListBox
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nel caricamento degli utenti: " + caught.getMessage());
+                    }
+                });
+            }
+
+            @Override
             public void onBack() {
                 loadHomeView(); 
             }
@@ -151,8 +166,8 @@ public class NotingApp implements EntryPoint {
         }
 
         @Override
-        public void onSalvaNota(Note notaModificata) {
-            service.updateNota(notaModificata, new AsyncCallback<Void>() {
+        public void onSalvaNota(Note notaModificata, Note.Stato nuovoStato) {
+            service.updateNota(notaModificata, nuovoStato ,new AsyncCallback<Void>() {
                 @Override
                 public void onSuccess(Void result) {
                     Window.alert("Nota salvata con successo!");
@@ -162,6 +177,23 @@ public class NotingApp implements EntryPoint {
                 @Override
                 public void onFailure(Throwable caught) {
                     Window.alert("Errore nel salvataggio: " + caught.getMessage());
+                }
+            });
+        }
+
+        @Override
+        public void onStatoNotaChanged(Note notaModificata, Note.Stato nuovoStato) {
+            // Aggiorna lo stato della nota
+            notaModificata.setStato(nuovoStato);
+            service.updateNota(notaModificata,nuovoStato, new AsyncCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    Window.alert("Stato della nota aggiornato con successo!");
+                }
+
+                @Override
+                public void onFailure(Throwable caught) {
+                    Window.alert("Errore nell'aggiornamento dello stato: " + caught.getMessage());
                 }
             });
         }

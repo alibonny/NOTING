@@ -2,6 +2,7 @@ package com.google.gwt.sample.noting.server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
@@ -127,7 +128,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     }
 
     @Override
-    public void updateNota(Note notaModificata) throws NotingException {
+    public void updateNota(Note notaModificata, Note.Stato nuovoStato) throws NotingException {
         HttpServletRequest request = getThreadLocalRequest();
         HttpSession session = request.getSession(false);
 
@@ -142,6 +143,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
 
         synchronized (username.intern()) {
+            // recupero note dell'utente
             List<Note> userNotes = notesDB.get(username);
             if (userNotes == null) {
                 userNotes = new ArrayList<>();
@@ -211,6 +213,12 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         }
 
         DBManager.commit();
+    }
+
+        @Override
+    public List<String> getAllUsernames() {
+        Map<String, String> userDb = DBManager.getUsersDatabase();
+        return new ArrayList<>(userDb.keySet()); // Solo username (le chiavi)
     }
     
 }
