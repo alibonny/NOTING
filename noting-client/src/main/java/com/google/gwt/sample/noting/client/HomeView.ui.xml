@@ -3,14 +3,17 @@
              xmlns:g="urn:import:com.google.gwt.user.client.ui">
 
     <g:HTMLPanel>
+        <!-- Header utente -->
         <g:HorizontalPanel verticalAlignment="ALIGN_MIDDLE" styleName="headerPanel">
             <g:Label ui:field="usernameLabel" styleName="userInfo"/>
             <g:Button ui:field="logoutButton" text="Logout" styleName="bottoneLogin"/>
         </g:HorizontalPanel>
         <hr/>
 
+        <!-- Titolo / benvenuto -->
         <g:Label text="Benvenuto nella tua dashboard!" styleName="label2"/>
 
+        <!-- Azioni principali: crea nota + cerca -->
         <g:HorizontalPanel verticalAlignment="ALIGN_MIDDLE" spacing="10">
             <g:Button ui:field="createNoteButton" text="Crea Nota" styleName="bottoneLogin"/>
 
@@ -20,6 +23,13 @@
             </g:HorizontalPanel>
         </g:HorizontalPanel>
 
+        <!-- NUOVA barra filtri: Le mie note / Condivise con me -->
+        <g:HorizontalPanel verticalAlignment="ALIGN_MIDDLE" spacing="8" styleName="filterBar">
+            <g:Button ui:field="myNotes" text="Le mie note" styleName="pillButton active"/>
+            <g:Button ui:field="condiviseConMe" text="Condivise con me" styleName="pillButton"/>
+        </g:HorizontalPanel>
+
+        <!-- Lista note -->
         <g:FlowPanel ui:field="noteListPanel" width="100%" styleName="noteGridPanel"/>
     </g:HTMLPanel>
 

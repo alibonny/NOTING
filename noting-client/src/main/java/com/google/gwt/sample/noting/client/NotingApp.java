@@ -21,6 +21,9 @@ public class NotingApp implements EntryPoint {
     public void onModuleLoad() {
         loadLoginView();
     }
+    
+
+/********* LoginView   ************* */
 
     private void loadLoginView() {
         this.loggedInUser = null; 
@@ -44,6 +47,8 @@ public class NotingApp implements EntryPoint {
         RootPanel.get().clear();
         RootPanel.get().add(loginView);
     }
+
+    /****************  HomeView      ************************** */ 
 
     private void loadHomeView() {
         if (loggedInUser == null) return; // Sicurezza
@@ -92,6 +97,38 @@ public class NotingApp implements EntryPoint {
                 });
             }
 
+            @Override
+            public void myNotesSelected() {
+                service.getNoteUtente(new AsyncCallback<List<Note>>() {
+                    @Override
+                    public void onSuccess(List<Note> result) {
+                        homeView.setNotes(result);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nel caricamento delle note: " + caught.getMessage());
+                    }
+                });
+            }
+
+
+            @Override
+            public void condiviseConMeSelected() {
+                service.getCondiviseConMe(new AsyncCallback<List<Note>>() {
+                    @Override
+                    public void onSuccess(List<Note> result) {
+                        homeView.setNotes(result);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nel caricamento delle note condivise: " + caught.getMessage());
+                    }
+                });
+
+            }
+
         });
 
         service.getNoteUtente(new AsyncCallback<List<Note>>() {
@@ -116,14 +153,13 @@ public class NotingApp implements EntryPoint {
 
         createNoteView.setCreateNoteViewListener(new CreateNoteViewListener() {
             @Override
-            public void onSave(String titolo, String contenuto, Note.Stato stato) {
-                service.creazioneNota(titolo, contenuto, stato, new AsyncCallback<Void>() {
+            public void onSave(String titolo, String contenuto, Note.Stato stato, List<String> utentiList) {
+                service.creazioneNota(titolo, contenuto, stato, utentiList, new AsyncCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
-                        Window.alert("Nota salvata con successo!");
-                        loadHomeView(); // Torna alla home
+                        Window.alert("Nota creata con successo!");
+                        loadHomeView(); // Torna alla home dopo la creazione della nota
                     }
-
                     @Override
                     public void onFailure(Throwable caught) {
                         Window.alert("Errore nel salvataggio della nota: " + caught.getMessage());
@@ -131,25 +167,32 @@ public class NotingApp implements EntryPoint {
                 });
             }
 
-            @Override
-            public void mostraUtenti() {
-                service.getAllUsernames(new AsyncCallback<List<String>>() {
-                    @Override
-                    public void onSuccess(List<String> usernames) {
-                        createNoteView.setUserList(usernames); // Imposta la lista degli utenti nel ListBox
-                    }
-
-                    @Override
-                    public void onFailure(Throwable caught) {
-                        Window.alert("Errore nel caricamento degli utenti: " + caught.getMessage());
-                    }
-                });
-            }
-
-            @Override
+             @Override
             public void onBack() {
                 loadHomeView(); 
             }
+
+            @Override
+            public void trovaUtente(String username, AsyncCallback<Boolean> callback) {
+                service.cercaUtente( username,new AsyncCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean exists) {
+                if (Boolean.TRUE.equals(exists)) {
+                    callback.onSuccess(true);
+                    // eventuale logica di condivisione, es: service.condividiNota(...)
+                } else {
+                    callback.onSuccess(false);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable caught) {
+                Window.alert("Errore nella ricerca utente: " + caught.getMessage());
+            }
+            });
+            }
+
+
         });
 
         RootPanel.get().clear();

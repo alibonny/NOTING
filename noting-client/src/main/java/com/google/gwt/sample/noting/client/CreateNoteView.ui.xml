@@ -17,14 +17,26 @@
         <g:HorizontalPanel spacing="10" verticalAlignment="ALIGN_MIDDLE" styleName="button-panel">
             
             <g:Label text="Stato:" styleName="label2"/>
+
+
+
+            <!-- Stato della nota-->
             <g:ListBox ui:field="statoBox" styleName="status" />
-            <g:ListBox ui:field="userListBox" styleName="user-dropdown" />
+
+
+            <!-- Lista degli utenti-->
+
+            <g:SuggestBox ui:field="utenteBox" styleName="user-suggest" />
+            <g:Button ui:field="shareBtn" text="Condividi" styleName="share-button" />
 
 
 
             <g:Button ui:field="saveButton" text="Salva" styleName="bottoneLogin"/>
 
         </g:HorizontalPanel>
+
+        <g:Label ui:field="utentiCondivisi" text=""  styleName="utentiCondivisi"/>
+
 
     </g:HTMLPanel>
 </ui:UiBinder>

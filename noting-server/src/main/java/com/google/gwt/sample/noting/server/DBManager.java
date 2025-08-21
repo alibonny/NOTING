@@ -14,6 +14,8 @@ import org.mapdb.Serializer;
 import org.mapdb.Atomic;
 
 import com.google.gwt.sample.noting.shared.Note;
+import com.google.gwt.sample.noting.shared.User;
+
 
 @WebListener
 public class DBManager implements ServletContextListener {
@@ -21,6 +23,7 @@ public class DBManager implements ServletContextListener {
     private static DB db;
     private static ConcurrentMap<String, String> usersDatabase;
     private static ConcurrentMap<String, List<Note>> notesDatabase; // Mappa per le note
+    private static ConcurrentMap<Integer, List<String>> listaCondivisione; // Mappa per le note condivise
     private static Atomic.Var<Integer> noteIdCounter;
 
 
@@ -42,6 +45,8 @@ public class DBManager implements ServletContextListener {
         
         // Mappa delle note
         notesDatabase = db.hashMap("notes", Serializer.STRING, Serializer.JAVA).createOrOpen();
+
+        listaCondivisione = db.hashMap("listaCondivisione", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
 
         noteIdCounter = db.atomicVar("noteIdCounter", Serializer.INTEGER).createOrOpen();
         if (noteIdCounter.get() == null) {
@@ -71,6 +76,10 @@ public class DBManager implements ServletContextListener {
     
     public static ConcurrentMap<String, List<Note>> getNotesDatabase() {
         return notesDatabase;
+    }
+
+    public static ConcurrentMap<Integer, List<String>> getListaCondivisione() {
+        return listaCondivisione;
     }
     
     public static void commit() {

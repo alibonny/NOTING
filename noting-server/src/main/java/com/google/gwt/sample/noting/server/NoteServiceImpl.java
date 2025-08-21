@@ -1,8 +1,13 @@
 package com.google.gwt.sample.noting.server;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
@@ -16,6 +21,8 @@ import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NotingException; 
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+
+
 
 public class NoteServiceImpl extends RemoteServiceServlet implements NoteService {
 
@@ -65,7 +72,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     }
 
     @Override
-    public void creazioneNota(String titolo, String contenuto, Note.Stato stato) throws NotingException {
+    public void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String> utentiCondivisi) throws NotingException { //aggiungere lista degli utenti a cui condividere la nota
         HttpServletRequest request = this.getThreadLocalRequest();
         HttpSession session = request.getSession(false);
 
@@ -76,37 +83,83 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         User user = (User) session.getAttribute("user");
         String username = user.getUsername();
 
-    /*   // piccola pulizia
-        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
-
+       // ===========================
+    //  SVUOTA SUBITO IL "DB"
+    // ===========================
+    ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+    ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
+/*
+    try {
+        // Svuota entrambe le mappe e azzera il contatore ID
         notesDB.clear();
+        listaCondivisione.clear();
         DBManager.getNoteIdCounter().set(0);
         DBManager.commit();
-    */  
+        System.out.println("[DEV] DB svuotato: notesDB, listaCondivisione e contatore ID azzerati.");
+    } catch (Exception ex) {
+        // In caso di dati vecchi/incompatibili, prova almeno a “resettare” le mappe
+        System.err.println("[DEV] Errore durante lo svuotamento MapDB: " + ex);
+        // Se hai un metodo di utilità in DBManager per re-inizializzare, chiamalo qui:
+        // DBManager.reinitNotesAndShares(); // <-- opzionale, se lo implementi
+        // In alternativa, prova comunque a proseguire con mappe vuote logiche:
+        // (non c'è molto altro da fare senza rigenerare il file fisico)
+    } */
 
         
-        Note nuovaNota = new Note(titolo, contenuto, stato ,username);
-        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+
+         List<String> destinatari = (utentiCondivisi == null ? Collections.<String>emptyList() : utentiCondivisi)
+            .stream()
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .filter(s -> !s.equals(username)) // opzionale: non condividere con se stessi
+            .distinct()
+            .collect(Collectors.toList());
+
+
+
+        Note nuovaNota = new Note(titolo, contenuto, stato,destinatari);
+
+            // Assegno ID univoco PRIMA di usarlo come chiave nelle mappe
+        Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
+        int newId;
+        synchronized (noteIdCounter) {
+        newId = noteIdCounter.get();
+        noteIdCounter.set(newId + 1);
+         }
+        nuovaNota.setId(newId);
      
-        synchronized(username.intern()) {
-            List<Note> userNotes = notesDB.get(username);
-            if (userNotes == null) {
-                userNotes = new ArrayList<>();
-            }
-
-             // Assegna ID univoco alla nuova nota
-            Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
-            int newId = noteIdCounter.get();
-            noteIdCounter.set(newId + 1);
-            nuovaNota.setId(newId);
-
-            userNotes.add(nuovaNota);
-            notesDB.put(username, userNotes);
+        // Salvo la nota nella lista dell'utente
+        synchronized (username.intern()) {
+        List<Note> userNotes = notesDB.get(username);
+        if (userNotes == null) {
+            userNotes = new ArrayList<>();
+        }
+        userNotes.add(nuovaNota);
+        notesDB.put(username, userNotes);
         }
 
-        DBManager.commit();
-        System.out.println("Nota creata da " + username + " con titolo: " + titolo + " e stato: " + stato.name());
-    }
+       // Determino se lo stato è "condiviso" o "privato"
+         boolean isCondivisa =
+            stato == Note.Stato.Condivisa
+         || stato == Note.Stato.CondivisaSCR     // <-- rinomina se il tuo enum usa un altro identificatore
+         || "Condivisa".equalsIgnoreCase(stato.name())
+         || "CondivisainSCR".equalsIgnoreCase(stato.name());
+
+         // Inizializzo/aggiorno la lista di condivisione:
+           // - vuota se privata
+           // - lista degli username se condivisa
+         List<String> valoriCondivisione = isCondivisa ? destinatari : new ArrayList<>();
+         listaCondivisione.put(newId, valoriCondivisione);
+
+         DBManager.commit();
+
+         System.out.println("Nota creata da: " + username
+            + " con titolo: " + titolo
+            + " e stato: " + stato.name()
+            + " (ID=" + newId + "), condivisa con: " + valoriCondivisione);
+        }
+    
 
     @Override
     public void eliminaUltimaNota() {
@@ -220,5 +273,83 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         Map<String, String> userDb = DBManager.getUsersDatabase();
         return new ArrayList<>(userDb.keySet()); // Solo username (le chiavi)
     }
+
+    @Override
+    public boolean cercaUtente(String username) throws NotingException {
+         HttpSession session = getThreadLocalRequest().getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            throw new NotingException("Utente non autenticato.");
+        }
+
+        User username_proprietario = (User) session.getAttribute("user");
+
+        boolean risultato = false;
+        String usernameDb = DBManager.getUsersDatabase().get(username);
+        for (String user : DBManager.getUsersDatabase().keySet()) {
+
+    //Window.alert("user = " + user);
+    //Window.alert("username_proprietario = " + username_proprietario.getUsername());
+        // Utente trovato, ma non deve essere lo stesso che è loggato
+        if (user.equals(username) ){   
+            
+            risultato = true;
+        }
+    }
+
+        return risultato; // Utente non trovato 
+
+       
+    }
+
+    @Override
+public List<Note> getCondiviseConMe() throws NotingException {
+    HttpSession session = getThreadLocalRequest().getSession(false);
+    if (session == null || session.getAttribute("user") == null) {
+        throw new NotingException("Utente non autenticato.");
+    }
+
+    String username = ((User) session.getAttribute("user")).getUsername();
+
+    ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
+    ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+
+    List<Note> result = new ArrayList<>();
+
+    // 1) Prendo gli ID delle note condivise con questo utente (gestendo null e duplicati)
+    Set<Integer> sharedIds = new HashSet<>();
+    for (Map.Entry<Integer, List<String>> e : listaCondivisione.entrySet()) {
+        List<String> destinatari = e.getValue();
+        if (destinatari != null && destinatari.contains(username)) {
+            sharedIds.add(e.getKey());
+        }
+    }
+    if (sharedIds.isEmpty()) {
+        return result; // niente da restituire
+    }
+
+    // 2) Creo un indice id -> Note per ricerca O(1)
+    Map<Integer, Note> byId = new HashMap<>();
+    for (List<Note> noteList : notesDB.values()) {
+        if (noteList == null) continue;
+        for (Note n : noteList) {
+            // opzionale: se vuoi escludere le note create da me, scommenta:
+             if (username.equals(n.getOwnerUsername())) continue;
+            byId.put(n.getId(), n);
+        }
+    }
+
+    // 3) Ricompongo la lista nell'ordine degli ID (mantieni ordine di inserimento se vuoi)
+    for (Integer id : sharedIds) {
+        Note n = byId.get(id);
+        if (n != null) {
+            result.add(n);
+        }
+        // se n == null, l'ID è "orfano": la nota è stata cancellata/mai salvata → ignora
+    }
+
+    return result;
+}
+
+
     
 }

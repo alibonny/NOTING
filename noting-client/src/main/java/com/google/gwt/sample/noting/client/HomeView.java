@@ -110,4 +110,20 @@ public class HomeView extends Composite {
         }
     }
 
+    @UiHandler("myNotes")
+    void onMyNotesClick(ClickEvent e) {
+        if (listener != null) {
+            listener.myNotesSelected();
+        }
+
+    }
+
+
+    @UiHandler("condiviseConMe")
+    void onCondiviseConMeClick(ClickEvent e) {
+        if (listener != null) {
+            listener.condiviseConMeSelected();
+        }
+    }
+
 }
