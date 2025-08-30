@@ -21,5 +21,7 @@ public interface NoteServiceAsync {
     void cercaUtente(String username, AsyncCallback<Boolean> callback);
 
     
-    void getCondiviseConMe(AsyncCallback<List<Note>> callback);    
+    void getCondiviseConMe(AsyncCallback<List<Note>> callback);  
+    
+    void creaCopiaNota(String username, int notaId, AsyncCallback<Void> callback);
 }

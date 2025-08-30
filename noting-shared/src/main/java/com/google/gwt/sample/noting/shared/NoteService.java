@@ -21,5 +21,7 @@ public interface NoteService extends RemoteService {
 
     List<Note> getCondiviseConMe() throws NotingException;
 
+    void creaCopiaNota(String username, int notaId) throws NotingException;
+
 
 }

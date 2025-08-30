@@ -52,6 +52,7 @@ public class CreateNoteView extends Composite {
         for (Note.Stato stato : Note.Stato.values()) {
             statoBox.addItem(stato.name());
         }
+        utenteBox.setVisible(false); // Nascondi il campo utente inizialmente
     }
 
     public void setCreateNoteViewListener(CreateNoteViewListener listener) {

@@ -350,6 +350,44 @@ public List<Note> getCondiviseConMe() throws NotingException {
     return result;
 }
 
+    @Override
+    public void creaCopiaNota(String username, int notaId) throws NotingException {
+        if (username == null) {
+            throw new NotingException("Utente non autenticato.");
+        }
+        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+
+        
+    for (List<Note> noteList : notesDB.values()) {
+        for (Note nota : noteList) {
+            if (nota.getId() == notaId) {
+
+                Note copiaNota = new Note(nota.getTitle(), nota.getContent(), Note.Stato.Privata);
+                Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
+                int newId;
+                synchronized (noteIdCounter) {
+                    newId = noteIdCounter.get();
+                    noteIdCounter.set(newId + 1);
+                }
+                copiaNota.setId(newId);
+
+                        // Salvo la nota nella lista dell'utente
+                    synchronized (username.intern()) {
+                     List<Note> userNotes = notesDB.get(username);
+                     if (userNotes == null) {
+                        userNotes = new ArrayList<>();
+                         }
+                        userNotes.add(copiaNota);
+                        notesDB.put(username, userNotes);
+                    }   
+                DBManager.commit();
+                System.out.println("Copia della nota ID: " + notaId + " creata per l'utente: " + username + " con nuovo ID: " + newId);
+                return; // esco dopo aver creato la copia
+            }
+        }
+    }
+}
+
 
     
 }

@@ -25,6 +25,7 @@ public class VisualizzaNotaView extends Composite {
     @UiField Button salvaButton;
     @UiField Button modificaButton;
     @UiField Button eliminaButton;
+    @UiField Button creaUnaCopia;
     @UiField HTML backLink;
     @UiField ListBox statoBox; // per mostrare lo stato della nota
 
@@ -97,6 +98,13 @@ public class VisualizzaNotaView extends Composite {
     void onBackLinkClick(ClickEvent e) {
         if (listener != null) {
             listener.onBack();
+        }
+    }
+
+    @UiHandler("creaUnaCopia")
+    void onCreaUnaCopiaClick(ClickEvent e) {
+        if (listener != null) {
+            listener.onCreaUnaCopia(nota);
         }
     }
 }

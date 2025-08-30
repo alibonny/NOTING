@@ -19,5 +19,8 @@
             <g:Button ui:field="eliminaButton" text="Elimina" styleName="bottoneLogin"/>
         </g:HorizontalPanel>
 
+
+        <g:Button ui:field="creaUnaCopia" text="CreaCopia"/>
+
     </g:HTMLPanel>
 </ui:UiBinder>

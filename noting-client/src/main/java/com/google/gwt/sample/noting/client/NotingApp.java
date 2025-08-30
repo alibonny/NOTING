@@ -199,7 +199,7 @@ public class NotingApp implements EntryPoint {
         RootPanel.get().add(createNoteView);
     }
 
-   private void loadVisualizzaNota(Note nota) {
+ private void loadVisualizzaNota(Note nota) {
     VisualizzaNotaView view = new VisualizzaNotaView(nota);
 
     view.setVisualizzaNotaViewListener(new VisualizzaNotaViewListener() {
@@ -210,7 +210,7 @@ public class NotingApp implements EntryPoint {
 
         @Override
         public void onSalvaNota(Note notaModificata, Note.Stato nuovoStato) {
-            service.updateNota(notaModificata, nuovoStato ,new AsyncCallback<Void>() {
+            service.updateNota(notaModificata, nuovoStato, new AsyncCallback<Void>() {
                 @Override
                 public void onSuccess(Void result) {
                     Window.alert("Nota salvata con successo!");
@@ -228,7 +228,7 @@ public class NotingApp implements EntryPoint {
         public void onStatoNotaChanged(Note notaModificata, Note.Stato nuovoStato) {
             // Aggiorna lo stato della nota
             notaModificata.setStato(nuovoStato);
-            service.updateNota(notaModificata,nuovoStato, new AsyncCallback<Void>() {
+            service.updateNota(notaModificata, nuovoStato, new AsyncCallback<Void>() {
                 @Override
                 public void onSuccess(Void result) {
                     Window.alert("Stato della nota aggiornato con successo!");
@@ -256,12 +256,25 @@ public class NotingApp implements EntryPoint {
                 }
             });
         }
+
+        @Override
+        public void onCreaUnaCopia(Note notaDaCopiare) {
+            service.creaCopiaNota(loggedInUser.getUsername(), notaDaCopiare.getId(), new AsyncCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    Window.alert("Copia della nota creata con successo!");
+                    loadHomeView(); // Torna alla home dopo la creazione della copia
+                }
+
+                @Override
+                public void onFailure(Throwable caught) {
+                    Window.alert("Errore nella creazione della copia: " + caught.getMessage());
+                }
+            });
+        }
     });
 
     RootPanel.get().clear();
     RootPanel.get().add(view);
 }
-
-
-
 }

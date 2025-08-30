@@ -7,4 +7,5 @@ public interface VisualizzaNotaViewListener {
    // void onModificaNota(Note nota);
     void onStatoNotaChanged(Note nota, Note.Stato nuovoStato);
     void onEliminaNota(Note nota);
+    void onCreaUnaCopia(Note nota);
 }
