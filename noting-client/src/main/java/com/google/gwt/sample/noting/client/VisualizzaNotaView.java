@@ -3,6 +3,7 @@ package com.google.gwt.sample.noting.client;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.sample.noting.shared.Note;
+import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
@@ -26,31 +27,62 @@ public class VisualizzaNotaView extends Composite {
     @UiField Button modificaButton;
     @UiField Button eliminaButton;
     @UiField Button creaUnaCopia;
+    @UiField Button annullaCondivisione;
     @UiField HTML backLink;
     @UiField ListBox statoBox; // per mostrare lo stato della nota
 
     private VisualizzaNotaViewListener listener;
     private Note nota; //così salviamo la nota corrente
-    protected Note.Stato stato; // per tenere traccia dello stato della nota
+    protected Note.Stato stato;
+    private User user; // per tenere traccia dello stato della nota
 
-    public VisualizzaNotaView(Note nota) {
-        initWidget(uiBinder.createAndBindUi(this));
-        this.nota = nota;
-        titoloBox.setText(nota.getTitle());
-        contenutoArea.setText(nota.getContent());
-        contenutoArea.setReadOnly(true);
+    public VisualizzaNotaView(Note nota, User user) {
+    initWidget(uiBinder.createAndBindUi(this));
+    this.nota = nota;
+    this.user = user;
 
-        for (Note.Stato stato : Note.Stato.values()) {
-            statoBox.addItem(stato.name());
-        }
+    // titoli/contenuto con default sicuri
+    titoloBox.setText(nota != null && nota.getTitle() != null ? nota.getTitle() : "");
+    contenutoArea.setText(nota != null && nota.getContent() != null ? nota.getContent() : "");
+    contenutoArea.setReadOnly(true);
 
-        statoBox.setSelectedIndex(nota.getStato().ordinal()); // imposta lo stato corrente della nota
-
-        statoBox.setEnabled(false); // disabilita la modifica dello stato
-
-        // il bottone salva è inizialmente disattivato, viene attivato quando si effettuano modifiche
-        salvaButton.setVisible(false);
+    // popola la ListBox stati
+    statoBox.clear();
+    for (Note.Stato s : Note.Stato.values()) {
+        // usa anche il "value", così dopo potrai fare getSelectedValue()
+        statoBox.addItem(s.name(), s.name());
     }
+
+    // selezione stato SENZA NPE
+    if (nota != null && nota.getStato() != null) {
+        statoBox.setSelectedIndex(nota.getStato().ordinal());
+    } else if (statoBox.getItemCount() > 0) {
+        statoBox.setSelectedIndex(0); // fallback
+        // opzionale: nota.setStato(Note.Stato.valueOf(statoBox.getSelectedValue()));
+    }
+    statoBox.setEnabled(false);
+
+   String owner = nota.getOwnerUsername();
+   GWT.log("Owner della nota: " + owner);
+    String uname = (user != null ? user.getUsername() : null);
+
+    // Log in console GWT
+    GWT.log("Owner: " + owner + " | Logged user: " + uname);
+
+    if (owner != null && owner.equals(uname)) {
+    // stesso utente → nascondi il pulsante
+    annullaCondivisione.setVisible(false);
+    GWT.log("Pulsante nascosto (owner == user)");
+    } else {
+    // utenti diversi → mostra il pulsante
+    annullaCondivisione.setVisible(true);
+    GWT.log("Pulsante visibile (owner != user)");
+    }
+
+
+    salvaButton.setVisible(false);
+    }
+
 
     public void setVisualizzaNotaViewListener(VisualizzaNotaViewListener listener) {
         this.listener = listener;
@@ -107,4 +139,6 @@ public class VisualizzaNotaView extends Composite {
             listener.onCreaUnaCopia(nota);
         }
     }
+
+
 }

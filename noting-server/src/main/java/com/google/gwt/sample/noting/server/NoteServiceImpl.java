@@ -82,13 +82,14 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
         User user = (User) session.getAttribute("user");
         String username = user.getUsername();
+        System.out.println("Creazione nota per utente: " + username);
 
        // ===========================
     //  SVUOTA SUBITO IL "DB"
     // ===========================
     ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
     ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
-/*
+/* 
     try {
         // Svuota entrambe le mappe e azzera il contatore ID
         notesDB.clear();
@@ -103,7 +104,8 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         // DBManager.reinitNotesAndShares(); // <-- opzionale, se lo implementi
         // In alternativa, prova comunque a proseguire con mappe vuote logiche:
         // (non c'è molto altro da fare senza rigenerare il file fisico)
-    } */
+    } 
+    */
 
         
 
@@ -118,7 +120,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
 
 
-        Note nuovaNota = new Note(titolo, contenuto, stato,destinatari);
+        Note nuovaNota = new Note(titolo, contenuto, stato,destinatari,username);
 
             // Assegno ID univoco PRIMA di usarlo come chiave nelle mappe
         Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
@@ -154,11 +156,11 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
          DBManager.commit();
 
-         System.out.println("Nota creata da: " + username
+         System.out.println("Notal creata da: " + username
             + " con titolo: " + titolo
             + " e stato: " + stato.name()
             + " (ID=" + newId + "), condivisa con: " + valoriCondivisione);
-        }
+    }
     
 
     @Override
@@ -352,42 +354,69 @@ public List<Note> getCondiviseConMe() throws NotingException {
 
     @Override
     public void creaCopiaNota(String username, int notaId) throws NotingException {
-        if (username == null) {
-            throw new NotingException("Utente non autenticato.");
+
+    // Controlli input
+    if (username == null || username.isBlank()) {
+        throw new NotingException("Utente non autenticato.");
+    }
+    if (notaId <= 0) {
+        throw new NotingException("ID nota non valido.");
+    }
+
+    // Recupero strutture
+    ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+    List<Note> userNotes   = DBManager.getUserOwnedNotes(username);
+    List<Note> sharedNotes = DBManager.getUserSharedNotes(username);
+
+    // Cerca la nota da copiare
+    Note sorgente = null;
+    for (Note n : userNotes) {
+        if (n.getId() == notaId) { 
+            sorgente = n; 
+            break; 
         }
-        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
-
-        
-    for (List<Note> noteList : notesDB.values()) {
-        for (Note nota : noteList) {
-            if (nota.getId() == notaId) {
-
-                Note copiaNota = new Note(nota.getTitle(), nota.getContent(), Note.Stato.Privata);
-                Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
-                int newId;
-                synchronized (noteIdCounter) {
-                    newId = noteIdCounter.get();
-                    noteIdCounter.set(newId + 1);
-                }
-                copiaNota.setId(newId);
-
-                        // Salvo la nota nella lista dell'utente
-                    synchronized (username.intern()) {
-                     List<Note> userNotes = notesDB.get(username);
-                     if (userNotes == null) {
-                        userNotes = new ArrayList<>();
-                         }
-                        userNotes.add(copiaNota);
-                        notesDB.put(username, userNotes);
-                    }   
-                DBManager.commit();
-                System.out.println("Copia della nota ID: " + notaId + " creata per l'utente: " + username + " con nuovo ID: " + newId);
-                return; // esco dopo aver creato la copia
+    }
+    if (sorgente == null) {
+        for (Note n : sharedNotes) {
+            if (n.getId() == notaId) { 
+                sorgente = n; 
+                break; 
             }
         }
     }
+
+    if (sorgente == null) {
+        throw new NotingException("Nota non trovata o non accessibile.");
+    }
+
+    // Crea la copia (eventualmente copia anche tag/metadata/owner)
+    Note notaDaCopiare = new Note(sorgente.getTitle(), sorgente.getContent(), Note.Stato.Privata);
+    // Se esiste un campo owner/autore: notaDaCopiare.setOwner(username);
+    // Se servono tag: notaDaCopiare.setTags(new ArrayList<>(sorgente.getTags()));
+    // Timestamps: notaDaCopiare.setCreatedAt(Instant.now()); ecc.
+
+    // Assegna ID univoco
+    Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
+    int newId;
+    synchronized (noteIdCounter) {
+        int current = noteIdCounter.get();
+        newId = current + 1;      
+        noteIdCounter.set(newId);
+    }
+    notaDaCopiare.setId(newId);
+
+    // Salva la nota nella lista dell'utente
+    notesDB.compute(username, (u, list) -> {
+        if (list == null) list = new ArrayList<>();
+        list.add(notaDaCopiare);
+        return list; 
+    });
+
+    DBManager.commit();
+    System.out.println("Copia della nota ID: " + notaId + " creata per l'utente: " + username + " con nuovo ID: " + newId);
+}
+
 }
 
 
     
-}

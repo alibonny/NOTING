@@ -1,29 +1,34 @@
 package com.google.gwt.sample.noting.server;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 
+import org.mapdb.Atomic;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
-import org.mapdb.Atomic;
 
 import com.google.gwt.sample.noting.shared.Note;
-import com.google.gwt.sample.noting.shared.User;
 
 
 @WebListener
 public class DBManager implements ServletContextListener {
 
     private static DB db;
+    //utente registrati con username e password
     private static ConcurrentMap<String, String> usersDatabase;
+    // tutte le note creatre da ciascuno utente
     private static ConcurrentMap<String, List<Note>> notesDatabase; // Mappa per le note
+    // lista di username a cui è condivisa una nota
     private static ConcurrentMap<Integer, List<String>> listaCondivisione; // Mappa per le note condivise
+    // contatore per gli ID delle note
     private static Atomic.Var<Integer> noteIdCounter;
 
 
@@ -91,4 +96,42 @@ public class DBManager implements ServletContextListener {
     public static Atomic.Var<Integer> getNoteIdCounter() {
     return noteIdCounter;
     }
+
+    //Lista delle note di un utente
+    public static List<Note> getUserOwnedNotes(String username) {
+        return notesDatabase.getOrDefault(username,List.of());
+    }
+
+    public static List<Note> getUserSharedNotes(String username) {
+        // Lista vuota che conterrà le note condivise con l'utente
+        List<Note> shared = new ArrayList<>();
+        Integer notaId = null;
+
+        // Itera sulla mappa delle condivisioni segnarsi appunto java 8
+        for (Map.Entry<Integer, List<String>> entry : listaCondivisione.entrySet()) {
+             notaId = entry.getKey();
+            List<String> utentiCondivisi = entry.getValue();
+        }
+
+        if (shared != null && shared.contains(username)) {
+
+            for (List<Note> noteList : notesDatabase.values()) {
+                for (Note n : noteList) {
+                     if (n.getId() == notaId) {
+                         shared.add(n);
+                         break;
+                        }
+                }
+            }
+    
+        }
+
+        return shared;
+    }
 }
+
+
+
+
+
+

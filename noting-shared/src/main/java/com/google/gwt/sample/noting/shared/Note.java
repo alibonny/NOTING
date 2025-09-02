@@ -23,16 +23,15 @@ public class Note implements Serializable {
         this.title = title;
         this.content = content;
         this.stato = stato;
-        this.ownerUsername = null; // Owner non specificato
         this.id = 0; // ID temporaneo: sarà assegnato automaticamente lato server
     }
 
-    public Note(String title, String content, Stato stato, List<String> utentiCondivisi) {
+    public Note(String title, String content, Stato stato, List<String> utentiCondivisi, String ownerUsername) {
         this.title = title;
         this.content = content;
         this.stato = stato;
         this.utentiCondivisi = utentiCondivisi != null ? utentiCondivisi : new ArrayList<>(); // Inizializza la lista degli utenti condivisi
-        this.ownerUsername = null; // Owner non specificato
+        this.ownerUsername = ownerUsername;
         this.id = 0; // ID temporaneo: sarà assegnato automaticamente lato server
     }
 

@@ -12,6 +12,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.RootPanel;
 
+
 public class NotingApp implements EntryPoint {
     
     private final NoteServiceAsync service = GWT.create(NoteService.class);
@@ -19,8 +20,11 @@ public class NotingApp implements EntryPoint {
 
     @Override
     public void onModuleLoad() {
+  
         loadLoginView();
     }
+
+
     
 
 /********* LoginView   ************* */
@@ -78,8 +82,8 @@ public class NotingApp implements EntryPoint {
             }
 
              @Override
-            public void onNoteSelected(Note note) {
-                loadVisualizzaNota(note);
+            public void onNoteSelected(Note note, User user) {
+                loadVisualizzaNota(note,user);
             }
 
             @Override
@@ -199,8 +203,11 @@ public class NotingApp implements EntryPoint {
         RootPanel.get().add(createNoteView);
     }
 
- private void loadVisualizzaNota(Note nota) {
-    VisualizzaNotaView view = new VisualizzaNotaView(nota);
+ private void loadVisualizzaNota(Note nota, User user) {
+    GWT.log("[DBG] entro in loadVisualizzaNota con user=" 
+    + (user != null ? user.getUsername() : "NULL")
+    + ", note=" + (nota != null ? nota.getTitle() : "NULL"));
+    VisualizzaNotaView view = new VisualizzaNotaView(nota,user);
 
     view.setVisualizzaNotaViewListener(new VisualizzaNotaViewListener() {
         @Override
@@ -259,16 +266,21 @@ public class NotingApp implements EntryPoint {
 
         @Override
         public void onCreaUnaCopia(Note notaDaCopiare) {
+            Window.alert("utente: " + loggedInUser.getUsername());
             service.creaCopiaNota(loggedInUser.getUsername(), notaDaCopiare.getId(), new AsyncCallback<Void>() {
                 @Override
                 public void onSuccess(Void result) {
                     Window.alert("Copia della nota creata con successo!");
+                    Window.alert("utente: " + loggedInUser.getUsername());
+
                     loadHomeView(); // Torna alla home dopo la creazione della copia
                 }
 
                 @Override
                 public void onFailure(Throwable caught) {
                     Window.alert("Errore nella creazione della copia: " + caught.getMessage());
+                    Window.alert("utente: " + loggedInUser.getUsername());
+
                 }
             });
         }

@@ -21,6 +21,8 @@
 
 
         <g:Button ui:field="creaUnaCopia" text="CreaCopia"/>
+        <g:Button ui:field="annullaCondivisione" text="Annulla Condivisione"/>
+
 
     </g:HTMLPanel>
 </ui:UiBinder>
