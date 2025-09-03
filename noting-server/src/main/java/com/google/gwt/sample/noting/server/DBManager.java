@@ -24,13 +24,14 @@ public class DBManager implements ServletContextListener {
     private static DB db;
     //utente registrati con username e password
     private static ConcurrentMap<String, String> usersDatabase;
-    // tutte le note creatre da ciascuno utente
+    // tutte le note create da ciascuno utente, dove memorizza le note per owner
     private static ConcurrentMap<String, List<Note>> notesDatabase; // Mappa per le note
-    // lista di username a cui è condivisa una nota
+    // lista di username a cui è condivisa una nota, dice a chi + condivisa ogni nota per id
     private static ConcurrentMap<Integer, List<String>> listaCondivisione; // Mappa per le note condivise
     // contatore per gli ID delle note
     private static Atomic.Var<Integer> noteIdCounter;
-
+    // undice idNota -> Nota, è un indice veloce per recuperare una nota dall'ID
+    private static ConcurrentMap<Integer,Note> noteById;
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -52,6 +53,20 @@ public class DBManager implements ServletContextListener {
         notesDatabase = db.hashMap("notes", Serializer.STRING, Serializer.JAVA).createOrOpen();
 
         listaCondivisione = db.hashMap("listaCondivisione", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
+
+        noteById = db.hashMap("noteById", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
+
+
+        // --- riallinea indice se vuoto ma ci sono già note salvate ---
+    if (noteById.isEmpty() && !notesDatabase.isEmpty()) {
+        for (List<Note> list : notesDatabase.values()) {
+            if (list == null) continue;
+            for (Note n : list) {
+                if (n != null) noteById.put(n.getId(), n);
+            }
+        }
+        db.commit();
+    }
 
         noteIdCounter = db.atomicVar("noteIdCounter", Serializer.INTEGER).createOrOpen();
         if (noteIdCounter.get() == null) {
@@ -103,30 +118,31 @@ public class DBManager implements ServletContextListener {
     }
 
     public static List<Note> getUserSharedNotes(String username) {
-        // Lista vuota che conterrà le note condivise con l'utente
-        List<Note> shared = new ArrayList<>();
-        Integer notaId = null;
+    List<Note> shared = new ArrayList<>();
+    if (username == null) return shared;
 
-        // Itera sulla mappa delle condivisioni segnarsi appunto java 8
-        for (Map.Entry<Integer, List<String>> entry : listaCondivisione.entrySet()) {
-             notaId = entry.getKey();
-            List<String> utentiCondivisi = entry.getValue();
-        }
+    for (Map.Entry<Integer, List<String>> entry : listaCondivisione.entrySet()) {
+        Integer id = entry.getKey();
+        List<String> destinatari = entry.getValue();
 
-        if (shared != null && shared.contains(username)) {
-
-            for (List<Note> noteList : notesDatabase.values()) {
-                for (Note n : noteList) {
-                     if (n.getId() == notaId) {
-                         shared.add(n);
-                         break;
-                        }
-                }
+        if (destinatari != null && destinatari.contains(username)) {
+            Note n = noteById.get(id);
+            if (n != null && !username.equals(n.getOwnerUsername())) { // opzionale: escludi le tue
+                shared.add(n);
             }
-    
         }
+    }
 
-        return shared;
+    // opzionale: se vuoi evitare che chi modifica la lista tocchi gli oggetti originali
+    // return Collections.unmodifiableList(shared);
+
+    return shared;
+    }
+
+    
+
+    public static ConcurrentMap<Integer, Note> getNoteById() {
+        return noteById;
     }
 }
 

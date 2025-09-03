@@ -10,7 +10,11 @@ import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HTMLPanel;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
@@ -30,6 +34,9 @@ public class VisualizzaNotaView extends Composite {
     @UiField Button annullaCondivisione;
     @UiField HTML backLink;
     @UiField ListBox statoBox; // per mostrare lo stato della nota
+    @UiField HTMLPanel shareSection;
+    @UiField FlowPanel sharedUsersPanel;
+    @UiField Button aggiungiUtenteButton;
 
     private VisualizzaNotaViewListener listener;
     private Note nota; //così salviamo la nota corrente
@@ -81,6 +88,34 @@ public class VisualizzaNotaView extends Composite {
 
 
     salvaButton.setVisible(false);
+
+    if((nota.getStato() == Note.Stato.Condivisa || nota.getStato() == Note.Stato.CondivisaSCR)
+     && nota.getOwnerUsername().equals(uname)) {
+        shareSection.setVisible(true);
+
+        // Popola la lista degli utenti con cui la nota è condivisa
+        sharedUsersPanel.clear();
+        if (nota.getUtentiCondivisi() != null && !nota.getUtentiCondivisi().isEmpty()) {
+            for (String utente : nota.getUtentiCondivisi()) {
+                HorizontalPanel row = new HorizontalPanel();
+                row.setSpacing(5);
+
+                Label userLabel = new Label(utente);
+                Button removeButton = new Button("X");
+                removeButton.addClickHandler(e -> onRemoveUserClick(nota,utente));
+
+                row.add(userLabel);
+                row.add(removeButton);
+
+                sharedUsersPanel.add(row);
+            }
+        } else {
+            sharedUsersPanel.add(new HTML("Nessun utente con cui è condivisa questa nota."));
+            }
+        }else {
+        shareSection.setVisible(false);
+        }
+
     }
 
 
@@ -139,6 +174,25 @@ public class VisualizzaNotaView extends Composite {
             listener.onCreaUnaCopia(nota);
         }
     }
+
+
+    @UiHandler("annullaCondivisione")
+    void onAnnullaCondivisioneClick(ClickEvent e) {
+        boolean confirm = Window.confirm("Annulla la condivisione di questa nota?");
+        if (confirm && listener != null) {
+            listener.onAnnullaCondivisione(nota);
+        }
+    }
+
+
+    private void onRemoveUserClick(Note nota,String username) {
+        boolean confirm = Window.confirm("Rimuovere l'utente " + username + " dalla condivisione?");
+        if (confirm && listener != null) {
+            listener.onRimuoviUtenteCondivisione(nota, username);
+        }
+    }
+
+   
 
 
 }

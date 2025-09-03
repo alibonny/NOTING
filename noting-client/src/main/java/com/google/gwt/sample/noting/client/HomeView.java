@@ -71,16 +71,16 @@ public class HomeView extends Composite {
             Label titleLabel = new Label(note.getTitle());
             noteWidget.add(titleLabel);
 
-            // 4. Aggiungiamo il gestore del click all'intero widget
-      noteWidget.addDomHandler(e -> {
-    String u = (this.user != null ? this.user.getUsername() : "NULL_USER");
-    GWT.log("[CLICK] user=" + u + ", note=" + (note!=null?note.getTitle():"NULL_NOTE"));
-    if (listener != null && this.user != null) {
-        listener.onNoteSelected(note, this.user);
-    } else {
-        com.google.gwt.user.client.Window.alert("USER NULL: rifai login");
-    }
-}, ClickEvent.getType());
+                    // 4. Aggiungiamo il gestore del click all'intero widget
+            noteWidget.addDomHandler(e -> {
+            String u = (this.user != null ? this.user.getUsername() : "NULL_USER");
+            GWT.log("[CLICK] user=" + u + ", note=" + (note!=null?note.getTitle():"NULL_NOTE"));
+            if (listener != null && this.user != null) {
+                listener.onNoteSelected(note, this.user);
+            } else {
+                com.google.gwt.user.client.Window.alert("USER NULL: rifai login");
+            }
+        }, ClickEvent.getType());
 
 
             // 5. Aggiungiamo il nostro nuovo post-it alla griglia

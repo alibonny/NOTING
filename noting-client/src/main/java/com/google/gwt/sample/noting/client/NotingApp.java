@@ -284,6 +284,38 @@ public class NotingApp implements EntryPoint {
                 }
             });
         }
+        @Override
+        public void onAnnullaCondivisione(Note notaDaAnnullare) {
+             service.annullaCondivisione(loggedInUser.getUsername(), notaDaAnnullare.getId(), new AsyncCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    Window.alert("Condivisione della nota annullata con successo!");
+                    loadHomeView(); // Torna alla home dopo aver annullato la condivisione
+                }
+
+                @Override
+                public void onFailure(Throwable caught) {
+                    Window.alert("Errore nell'annullamento della condivisione: " + caught.getMessage());
+                }
+            });
+        }
+
+        @Override
+        public void onRimuoviUtenteCondivisione(Note nota, String username){
+            service.rimuoviUtenteCondivisione(nota.getId(),username, new AsyncCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    Window.alert("Utente rimosso dalla condivisione con successo!");
+                    loadVisualizzaNota(nota,user); // Ricarica la vista della nota per riflettere i cambiamenti
+                }
+
+                @Override
+                public void onFailure(Throwable caught) {
+                    Window.alert("Errore nella rimozione dell'utente dalla condivisione: " + caught.getMessage());
+                }
+            });
+
+        }
     });
 
     RootPanel.get().clear();

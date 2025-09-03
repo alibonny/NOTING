@@ -8,4 +8,6 @@ public interface VisualizzaNotaViewListener {
     void onStatoNotaChanged(Note nota, Note.Stato nuovoStato);
     void onEliminaNota(Note nota);
     void onCreaUnaCopia(Note nota);
+    void onAnnullaCondivisione(Note nota);
+    void onRimuoviUtenteCondivisione(Note nota, String username);
 }

@@ -24,4 +24,6 @@ public interface NoteServiceAsync {
     void getCondiviseConMe(AsyncCallback<List<Note>> callback);  
     
     void creaCopiaNota(String username, int notaId, AsyncCallback<Void> callback);
+    void annullaCondivisione(String username, int notaId, AsyncCallback<Void> callback);
+    void rimuoviUtenteCondivisione(int notaId, String username, AsyncCallback<Void> callback);
 }
