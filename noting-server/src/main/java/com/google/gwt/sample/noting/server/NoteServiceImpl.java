@@ -36,9 +36,18 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
         if (storedPassword != null && storedPassword.equals(password)) {
             User user = new User(username);
+             // Guardia per evitare NPE quando esegui i test senza servlet/sessione
             HttpServletRequest request = this.getThreadLocalRequest();
+            if (request != null) {
             HttpSession session = request.getSession(true);
-            session.setAttribute("user", user);
+            if (session != null) {
+                session.setAttribute("user", user);
+            }
+        }
+
+           // HttpServletRequest request = this.getThreadLocalRequest();
+           // HttpSession session = request.getSession(true);
+           // session.setAttribute("user", user);
             return user;
         } else {
             throw new NotingException("Credenziali non valide.");

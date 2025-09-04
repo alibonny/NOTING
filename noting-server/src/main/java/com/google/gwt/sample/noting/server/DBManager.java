@@ -1,6 +1,8 @@
 package com.google.gwt.sample.noting.server;
 
+
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,78 @@ public class DBManager implements ServletContextListener {
     // undice idNota -> Nota, è un indice veloce per recuperare una nota dall'ID
     private static ConcurrentMap<Integer,Note> noteById;
 
+
+    private static void initMaps() {
+    // Crea/riapre tutte le strutture
+    usersDatabase = db.hashMap("users", Serializer.STRING, Serializer.STRING).createOrOpen();
+    notesDatabase = db.hashMap("notes", Serializer.STRING, Serializer.JAVA).createOrOpen();
+    listaCondivisione = db.hashMap("listaCondivisione", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
+    noteById = db.hashMap("noteById", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
+
+    noteIdCounter = db.atomicVar("noteIdCounter", Serializer.INTEGER).createOrOpen();
+    if (noteIdCounter.get() == null) {
+        noteIdCounter.set(1);
+    }
+
+    // riallineo indice se vuoto ma ci sono note
+    if (noteById.isEmpty() && !notesDatabase.isEmpty()) {
+        for (List<Note> list : notesDatabase.values()) {
+            if (list == null) continue;
+            for (Note n : list) {
+                if (n != null) noteById.put(n.getId(), n);
+            }
+        }
+        db.commit();
+    }
+}
+    private static void ensureOpenInMemory() {
+    if (db == null || db.isClosed()) {
+        db = DBMaker.memoryDB()
+                .transactionEnable()
+                .make();
+    }
+    if (usersDatabase == null || notesDatabase == null || listaCondivisione == null || noteById == null || noteIdCounter == null) {
+        initMaps();
+    }
+}
+
+    // Apri un DB MapDB su un file (diverso da quello “vero”) per i test
+public static void openForTests(Path filePath) {
+    closeForTests(); // chiude eventuale DB precedente
+    db = DBMaker.fileDB(filePath.toFile())
+            .transactionEnable()
+            .closeOnJvmShutdown()
+            .make();
+    initMaps();
+}
+
+// Pulisci i dati tra un test e l'altro
+public static void resetForTests() {
+    ensureOpenInMemory();
+    usersDatabase.clear();
+    notesDatabase.clear();
+    listaCondivisione.clear();
+    noteIdCounter.set(1);
+    db.commit();
+}
+
+// Chiudi e azzera i riferimenti (fine test)
+public static void closeForTests() {
+    try {
+        if (db != null && !db.isClosed()) db.close();
+    } catch (Exception ignore) {}
+    db = null;
+    usersDatabase = null;
+    notesDatabase = null;
+    listaCondivisione = null;
+    noteById = null;
+    noteIdCounter = null;
+}
+
+
+
+
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         System.out.println("Inizializzazione del database MapDB...");
@@ -46,6 +120,17 @@ public class DBManager implements ServletContextListener {
                     .closeOnJvmShutdown()
                     .make();
 
+        initMaps(); // <--- usa questo, niente duplicati sotto
+
+        if (usersDatabase.isEmpty()) {
+            usersDatabase.put("test", "test");
+            db.commit();
+            System.out.println("Utente di default 'test' creato.");
+        }
+        System.out.println("Database inizializzato con successo.");
+        }
+
+                    /* 
         // Mappa degli utenti
         usersDatabase = db.hashMap("users", Serializer.STRING, Serializer.STRING).createOrOpen();
         
@@ -56,7 +141,7 @@ public class DBManager implements ServletContextListener {
 
         noteById = db.hashMap("noteById", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
 
-
+        noteIdCounter = db.atomicVar("noteIdCounter", Serializer.INTEGER).createOrOpen();   
         // --- riallinea indice se vuoto ma ci sono già note salvate ---
     if (noteById.isEmpty() && !notesDatabase.isEmpty()) {
         for (List<Note> list : notesDatabase.values()) {
@@ -65,9 +150,11 @@ public class DBManager implements ServletContextListener {
                 if (n != null) noteById.put(n.getId(), n);
             }
         }
-        db.commit();
-    }
 
+        */
+    //    db.commit();
+   // }
+/* 
         noteIdCounter = db.atomicVar("noteIdCounter", Serializer.INTEGER).createOrOpen();
         if (noteIdCounter.get() == null) {
         noteIdCounter.set(1);
@@ -80,7 +167,7 @@ public class DBManager implements ServletContextListener {
         }
         
         System.out.println("Database inizializzato con successo.");
-    }
+    }*/
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
@@ -91,59 +178,63 @@ public class DBManager implements ServletContextListener {
     }
 
     public static ConcurrentMap<String, String> getUsersDatabase() {
+        if (usersDatabase == null) ensureOpenInMemory();
         return usersDatabase;
     }
-    
+
     public static ConcurrentMap<String, List<Note>> getNotesDatabase() {
+        if (notesDatabase == null) ensureOpenInMemory();
         return notesDatabase;
     }
 
     public static ConcurrentMap<Integer, List<String>> getListaCondivisione() {
+        if (listaCondivisione == null) ensureOpenInMemory();
         return listaCondivisione;
     }
-    
+
+    public static Atomic.Var<Integer> getNoteIdCounter() {
+        if (noteIdCounter == null) ensureOpenInMemory();
+        return noteIdCounter;
+    }
+
+    public static ConcurrentMap<Integer, Note> getNoteById() {
+        if (noteById == null) ensureOpenInMemory();
+        return noteById;
+    }
+
+
     public static void commit() {
         if (db != null && !db.isClosed()) {
             db.commit();
         }
     }
 
-    public static Atomic.Var<Integer> getNoteIdCounter() {
-    return noteIdCounter;
-    }
-
-    //Lista delle note di un utente
     public static List<Note> getUserOwnedNotes(String username) {
-        return notesDatabase.getOrDefault(username,List.of());
+        return getNotesDatabase().getOrDefault(username, List.of());
     }
 
     public static List<Note> getUserSharedNotes(String username) {
-    List<Note> shared = new ArrayList<>();
-    if (username == null) return shared;
+        List<Note> shared = new ArrayList<>();
+        if (username == null) return shared;
 
-    for (Map.Entry<Integer, List<String>> entry : listaCondivisione.entrySet()) {
-        Integer id = entry.getKey();
-        List<String> destinatari = entry.getValue();
+        for (Map.Entry<Integer, List<String>> entry : getListaCondivisione().entrySet()) {
+            Integer id = entry.getKey();
+            List<String> destinatari = entry.getValue();
 
-        if (destinatari != null && destinatari.contains(username)) {
-            Note n = noteById.get(id);
-            if (n != null && !username.equals(n.getOwnerUsername())) { // opzionale: escludi le tue
-                shared.add(n);
+            if (destinatari != null && destinatari.contains(username)) {
+                Note n = getNoteById().get(id);
+                if (n != null && !username.equals(n.getOwnerUsername())) {
+                    shared.add(n);
+                }
             }
         }
+        return shared;
     }
 
-    // opzionale: se vuoi evitare che chi modifica la lista tocchi gli oggetti originali
-    // return Collections.unmodifiableList(shared);
-
-    return shared;
-    }
 
     
 
-    public static ConcurrentMap<Integer, Note> getNoteById() {
-        return noteById;
-    }
+   
 }
 
 
