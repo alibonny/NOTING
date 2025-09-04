@@ -8,6 +8,7 @@
   <packaging>pom</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>11</maven.compiler.release>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -30,6 +31,23 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+            <!-- FORZA Eclipse Collections su versione compatibile con JDK 11 -->
+      <dependency>
+        <groupId>org.eclipse.collections</groupId>
+        <artifactId>eclipse-collections-api</artifactId>
+        <version>11.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.collections</groupId>
+        <artifactId>eclipse-collections</artifactId>
+        <version>11.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.collections</groupId>
+        <artifactId>eclipse-collections-forkjoin</artifactId>
+        <version>11.1.0</version>
+      </dependency>
+
     </dependencies>
   </dependencyManagement>
   <build>

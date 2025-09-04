@@ -56,7 +56,7 @@ class AuthServiceTest {
             () -> assertThrows(NotingException.class, () -> service.login("mario", null))
         );
     }
-/* 
+ 
     @Test
     void register_scriveNelDbDiTest() throws Exception {
     NoteServiceImpl service = new NoteServiceImpl();
@@ -64,6 +64,6 @@ class AuthServiceTest {
     assertEquals("alice", u.getUsername());
     assertEquals("P@ssw0rd!", DBManager.getUsersDatabase().get("alice"));
     }
-*/
+
 
 }
