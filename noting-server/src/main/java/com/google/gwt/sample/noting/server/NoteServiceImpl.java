@@ -25,6 +25,11 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 public class NoteServiceImpl extends RemoteServiceServlet implements NoteService {
 
+    static User TEST_USER = null;
+    static void _setTestUser(User u) { TEST_USER = u; }
+    static void _clearTestUser() { TEST_USER = null; }
+
+
     @Override
     public User login(String username, String password) throws NotingException {
         if (username == null || password == null) {
@@ -82,13 +87,22 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     @Override
     public void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String> utentiCondivisi) throws NotingException { //aggiungere lista degli utenti a cui condividere la nota
         HttpServletRequest request = this.getThreadLocalRequest();
-        HttpSession session = request.getSession(false);
+        HttpSession session = (request != null) ? request.getSession(false) : null;
 
-        if (session == null || session.getAttribute("user") == null) {
-            throw new NotingException("Utente non autenticato. Impossibile creare la nota.");
+      //  if (session == null || session.getAttribute("user") == null) {
+       //     throw new NotingException("Utente non autenticato. Impossibile creare la nota.");
+       // }
+
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
+
+        if(user == null){
+            if(TEST_USER != null){
+                user = TEST_USER;
+            } else {
+                throw new NotingException("Utente di test non impostato. Impossibile creare la nota.");
+            }
         }
 
-        User user = (User) session.getAttribute("user");
         String username = user.getUsername();
         System.out.println("Creazione nota per utente: " + username);
 
@@ -178,28 +192,37 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     @Override
     public List<Note> getNoteUtente() throws NotingException {
-    HttpSession session = getThreadLocalRequest().getSession(false);
-    if (session == null || session.getAttribute("user") == null) {
-        throw new NotingException("Utente non autenticato.");
-    }
+        HttpServletRequest request = this.getThreadLocalRequest();
+        HttpSession session = (request != null) ? request.getSession(false) : null;
 
-    User user = (User) session.getAttribute("user");
-    ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
+        if (user == null) {
+            if (TEST_USER != null) {
+                user = TEST_USER; // modalità test
+            } else {
+                throw new NotingException("Utente di test non impostato. Impossibile recuperare le note.");
+            }
+        }
 
-    List<Note> noteUtente = notesDB.get(user.getUsername());
-    return (noteUtente != null) ? noteUtente : new ArrayList<>();
+        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+        List<Note> noteUtente = notesDB.get(user.getUsername());
+        return (noteUtente != null) ? noteUtente : new ArrayList<>();
     }
 
     @Override
     public void updateNota(Note notaModificata, Note.Stato nuovoStato) throws NotingException {
         HttpServletRequest request = getThreadLocalRequest();
-        HttpSession session = request.getSession(false);
+        HttpSession session = (request != null) ? request.getSession(false) : null;
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
 
-        if (session == null || session.getAttribute("user") == null) {
-            throw new NotingException("Utente non autenticato.");
+         if (user == null) {
+            if (TEST_USER != null) {
+                 user = TEST_USER;
+            } else {
+                 throw new NotingException("Utente di test non impostato. Impossibile aggiornare la nota.");
+            }
         }
-
-        User user = (User) session.getAttribute("user");
+        
         String username = user.getUsername();
 
         ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
@@ -243,12 +266,18 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     @Override
     public List<Note> searchNotes(String query) throws NotingException {
-        HttpSession session = getThreadLocalRequest().getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            throw new NotingException("Utente non autenticato.");
+        HttpServletRequest request = this.getThreadLocalRequest();
+        HttpSession session = (request != null) ? request.getSession(false) : null;
+
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
+        if (user == null) {
+            if (TEST_USER != null) {
+                user = TEST_USER; // modalità test, niente sessione
+            } else {
+                throw new NotingException("Utente di test non impostato. Impossibile cercare note.");
+            }
         }
 
-        User user = (User) session.getAttribute("user");
         List<Note> noteUtente = DBManager.getNotesDatabase().get(user.getUsername());
         if (noteUtente == null) return new ArrayList<>();
 
