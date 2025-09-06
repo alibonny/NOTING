@@ -216,8 +216,8 @@ public class NotingApp implements EntryPoint {
         }
 
         @Override
-        public void onSalvaNota(Note notaModificata, Note.Stato nuovoStato) {
-            service.updateNota(notaModificata, nuovoStato, new AsyncCallback<Void>() {
+        public void onSalvaNota(Note notaModificata) {
+            service.updateNota(notaModificata, new AsyncCallback<Void>() {
                 @Override
                 public void onSuccess(Void result) {
                     Window.alert("Nota salvata con successo!");
@@ -231,22 +231,7 @@ public class NotingApp implements EntryPoint {
             });
         }
 
-        @Override
-        public void onStatoNotaChanged(Note notaModificata, Note.Stato nuovoStato) {
-            // Aggiorna lo stato della nota
-            notaModificata.setStato(nuovoStato);
-            service.updateNota(notaModificata, nuovoStato, new AsyncCallback<Void>() {
-                @Override
-                public void onSuccess(Void result) {
-                    Window.alert("Stato della nota aggiornato con successo!");
-                }
-
-                @Override
-                public void onFailure(Throwable caught) {
-                    Window.alert("Errore nell'aggiornamento dello stato: " + caught.getMessage());
-                }
-            });
-        }
+        
 
         @Override
         public void onEliminaNota(Note notaDaEliminare) {

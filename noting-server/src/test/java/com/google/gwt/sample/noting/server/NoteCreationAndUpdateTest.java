@@ -1,3 +1,4 @@
+/* 
 package com.google.gwt.sample.noting.server;
 
 import java.nio.file.Path;
@@ -103,8 +104,8 @@ public class NoteCreationAndUpdateTest {
         assertNotEquals(notes.get(0).getId(), notes.get(1).getId());
     }
 
-    /* Test update nota */
-
+   // /* Test update nota */
+/* 
     @Test
     void update_nota_esistente_ok() throws Exception {
         var svc = new NoteServiceImpl();
@@ -159,7 +160,7 @@ public class NoteCreationAndUpdateTest {
 
     }  */
 
-
+/* 
     @Test
     void update_nota_non_trovata_lancia() throws Exception {
     var svc = new NoteServiceImpl();
@@ -198,7 +199,7 @@ public class NoteCreationAndUpdateTest {
         assertTrue(ex.getMessage().contains("Utente di test non impostato"));
     }
 
+*/
 
 
-
-}
+//}

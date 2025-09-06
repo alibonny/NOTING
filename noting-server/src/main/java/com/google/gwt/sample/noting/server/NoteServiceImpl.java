@@ -19,6 +19,7 @@ import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NotingException; 
 import com.google.gwt.sample.noting.shared.User;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 
@@ -210,7 +211,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     }
 
     @Override
-    public void updateNota(Note notaModificata, Note.Stato nuovoStato) throws NotingException {
+    public void updateNota(Note notaModificata) throws NotingException {
         HttpServletRequest request = getThreadLocalRequest();
         HttpSession session = (request != null) ? request.getSession(false) : null;
         User user = (session != null) ? (User) session.getAttribute("user") : null;
@@ -224,13 +225,15 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         }
         
         String username = user.getUsername();
+        String owner = notaModificata.getOwnerUsername();
 
         ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+        ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
         Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
 
         synchronized (username.intern()) {
             // recupero note dell'utente
-            List<Note> userNotes = notesDB.get(username);
+            List<Note> userNotes = notesDB.get(owner);
             if (userNotes == null) {
                 userNotes = new ArrayList<>();
             }
@@ -257,7 +260,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
                 if (!updated) throw new NotingException("Nota non trovata.");
             }
 
-            notesDB.put(username, userNotes);
+            notesDB.put(owner, userNotes);
         }
 
         DBManager.commit();

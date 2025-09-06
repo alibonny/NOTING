@@ -48,35 +48,52 @@ public class VisualizzaNotaView extends Composite {
     this.nota = nota;
     this.user = user;
 
-    // titoli/contenuto con default sicuri
-    titoloBox.setText(nota != null && nota.getTitle() != null ? nota.getTitle() : "");
-    contenutoArea.setText(nota != null && nota.getContent() != null ? nota.getContent() : "");
+    // Imposta i valori iniziali dei campi
+    setUpIinitialUi();
+
+   
+
+    }
+
+    private void setUpIinitialUi() {
+    String titolo = (nota != null && nota.getTitle() != null) ? nota.getTitle() : "";
+    String contenuto = (nota != null && nota.getContent() != null) ? nota.getContent() : "";
+    titoloBox.setText(titolo);
+    contenutoArea.setText(contenuto);
+    titoloBox.setReadOnly(true);
     contenutoArea.setReadOnly(true);
 
-    // popola la ListBox stati
+    salvaButton.setVisible(false); // nasconde il pulsante "Salva" inizialmente
+
     statoBox.clear();
     for (Note.Stato s : Note.Stato.values()) {
-        // usa anche il "value", così dopo potrai fare getSelectedValue()
-        statoBox.addItem(s.name(), s.name());
+        statoBox.addItem(s.name());
     }
-
-    // selezione stato SENZA NPE
-    if (nota != null && nota.getStato() != null) {
-        statoBox.setSelectedIndex(nota.getStato().ordinal());
+    Note.Stato stato = (nota != null) ? nota.getStato() : null;
+    if (stato != null) {
+        // selezione robusta per value
+        for (int i = 0; i < statoBox.getItemCount(); i++) {
+            if (stato.name().equals(statoBox.getValue(i))) {
+                statoBox.setSelectedIndex(i);
+                break;
+            }
+        }
     } else if (statoBox.getItemCount() > 0) {
-        statoBox.setSelectedIndex(0); // fallback
-        // opzionale: nota.setStato(Note.Stato.valueOf(statoBox.getSelectedValue()));
+        statoBox.setSelectedIndex(0);
     }
-    statoBox.setEnabled(false);
+    statoBox.setEnabled(false); // disabilita la modifica inizialmente
 
-   String owner = nota.getOwnerUsername();
-   GWT.log("Owner della nota: " + owner);
-    String uname = (user != null ? user.getUsername() : null);
 
-    // Log in console GWT
-    GWT.log("Owner: " + owner + " | Logged user: " + uname);
+    // Gestione della sezione di condivisione e modifica
+    String owner = nota.getOwnerUsername();
+    String  utente = (user != null) ? user.getUsername() : null;
 
-    if (owner != null && owner.equals(uname)) {
+    boolean enableModifica =
+        owner.equals(utente) || (nota.getStato() == Note.Stato.CondivisaSCR);
+    modificaButton.setEnabled(enableModifica);
+
+    
+    if (owner != null && owner.equals(utente)) {
     // stesso utente → nascondi il pulsante
     annullaCondivisione.setVisible(false);
     GWT.log("Pulsante nascosto (owner == user)");
@@ -86,23 +103,21 @@ public class VisualizzaNotaView extends Composite {
     GWT.log("Pulsante visibile (owner != user)");
     }
 
-
-    salvaButton.setVisible(false);
-
+    
     if((nota.getStato() == Note.Stato.Condivisa || nota.getStato() == Note.Stato.CondivisaSCR)
-     && nota.getOwnerUsername().equals(uname)) {
+     && nota.getOwnerUsername().equals(utente)) {
         shareSection.setVisible(true);
 
         // Popola la lista degli utenti con cui la nota è condivisa
         sharedUsersPanel.clear();
         if (nota.getUtentiCondivisi() != null && !nota.getUtentiCondivisi().isEmpty()) {
-            for (String utente : nota.getUtentiCondivisi()) {
+            for (String utente1 : nota.getUtentiCondivisi()) {
                 HorizontalPanel row = new HorizontalPanel();
                 row.setSpacing(5);
 
-                Label userLabel = new Label(utente);
+                Label userLabel = new Label(utente1);
                 Button removeButton = new Button("X");
-                removeButton.addClickHandler(e -> onRemoveUserClick(nota,utente));
+                removeButton.addClickHandler(e -> onRemoveUserClick(nota,utente1));
 
                 row.add(userLabel);
                 row.add(removeButton);
@@ -116,6 +131,8 @@ public class VisualizzaNotaView extends Composite {
         shareSection.setVisible(false);
         }
 
+
+
     }
 
 
@@ -125,31 +142,53 @@ public class VisualizzaNotaView extends Composite {
 
     @UiHandler("modificaButton")
     void onModificaClick(ClickEvent e) {
-        contenutoArea.setReadOnly(false);
-        salvaButton.setVisible(true); // mostra il pulsante "Salva"
-        statoBox.setEnabled(true); // abilita la modifica dello stato
+       Note.Stato stato = (nota != null) ? nota.getStato() : null;
+    String owner = (nota != null) ? nota.getOwnerUsername() : null;
+    String utente = (user != null) ? user.getUsername() : null;
+    boolean isOwner = owner != null && owner.equals(utente);
 
-        if (listener != null) {
-            listener.onStatoNotaChanged(nota, stato);; // notifica il listener che si sta modificando la nota
+    // Non owner e non CondivisaSCR: il bottone dovrebbe essere disabilitato, ma mettiamo guardia
+    if (!isOwner && stato != Note.Stato.CondivisaSCR) {
+        Window.alert("Non hai i permessi per modificare questa nota.");
+        return;
+    }
+
+    if (stato == Note.Stato.CondivisaSCR || isOwner) {
+        // Pulsante Modifica è abilitato ma i campi restano NON editabili
+        titoloBox.setReadOnly(false);
+        contenutoArea.setReadOnly(false);
+    }
+        if(isOwner){
+        statoBox.setEnabled(true);
         }
+
+        salvaButton.setVisible(true);
+       
     }
 
     @UiHandler("salvaButton")
     void onSalvaClick(ClickEvent e) {
-        contenutoArea.setReadOnly(true);
-        salvaButton.setVisible(false);
+    // Commit valori UI → model
+    String selectedValue = statoBox.getSelectedValue(); // ora è valorizzato (addItem(label,value))
+    if (selectedValue == null) selectedValue = statoBox.getItemText(statoBox.getSelectedIndex());
 
-        // aggiorna il contenuto nella nota
-        nota.setContent(contenutoArea.getText());
+    nota.setTitle(titoloBox.getText());
+    nota.setContent(contenutoArea.getText());
+    if (selectedValue != null) {
+        nota.setStato(Note.Stato.valueOf(selectedValue));
+    }
 
-        String statoSelezionato = statoBox.getSelectedValue(); // o getSelectedItemText().replace(" ", "")
-        nota.setStato(Note.Stato.valueOf(statoSelezionato));
-        Window.alert("Nota salvata con successo!\nTitolo: " + titoloBox.getText() + "\nStato: " + statoSelezionato);
+    // Chiudi edit
+    titoloBox.setReadOnly(true);
+    contenutoArea.setReadOnly(true);
+    statoBox.setEnabled(false);
+    salvaButton.setVisible(false);
 
+    Window.alert("Nota salvata con successo!\nTitolo: " + nota.getTitle() + "\nStato: " + nota.getStato().name());
 
-        if (listener != null) {
-            listener.onSalvaNota(nota, nota.getStato()); // notifica il listener che la nota è stata salvata
-        }
+    if (listener != null) {
+        listener.onSalvaNota(nota);
+    }
     }
 
     @UiHandler("eliminaButton")
