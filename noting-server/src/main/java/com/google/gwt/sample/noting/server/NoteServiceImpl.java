@@ -8,17 +8,17 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.mapdb.Atomic;
-
 import com.google.gwt.sample.noting.shared.LockStatus;
 import com.google.gwt.sample.noting.shared.LockToken;
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteService;
-import com.google.gwt.sample.noting.shared.NotingException; 
+import com.google.gwt.sample.noting.shared.NotingException;
 import com.google.gwt.sample.noting.shared.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.mapdb.Atomic;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 
@@ -712,21 +712,6 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
             throw new NotingException("Non hai i permessi per modificare questa nota.");
         }
     }
-
-    // =======================
-    // TUA LOGICA ESISTENTE...
-    // (altri metodi RPC già presenti)
-    // =======================
-
-
-
-
-
-
-
-
-
-
 
 }
 

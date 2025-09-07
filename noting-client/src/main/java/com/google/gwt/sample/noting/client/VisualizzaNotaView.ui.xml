@@ -9,28 +9,27 @@
         <g:TextBox ui:field="titoloBox" styleName="note-input"/>
         
         <g:TextArea ui:field="contenutoArea" styleName="note-textarea" />
-
+        
         <g:Label text="Stato:" styleName="label2"/>
-        <g:ListBox ui:field="statoBox" styleName="note-select"/>  
-
+        
         <g:HorizontalPanel spacing="10" styleName="button-panel">
+            <g:ListBox ui:field="statoBox" styleName="status"/>  
+            
             <g:Button ui:field="modificaButton" text="Modifica" styleName="bottoneLogin"/>
             <g:Button ui:field="salvaButton" text="Salva" styleName="bottoneLogin"/>
             <g:Button ui:field="eliminaButton" text="Elimina" styleName="bottoneLogin"/>
+            <g:Button ui:field="creaUnaCopia" text="CreaCopia" styleName="bottoneLogin"/>
         </g:HorizontalPanel>
 
 
-        <g:Button ui:field="creaUnaCopia" text="CreaCopia"/>
+        
         <g:Button ui:field="annullaCondivisione" text="Annulla Condivisione"/>
-
-
 
         <!-- Contenitore SEZIONE CONDIVISIONE (nascosto di default) -->
         <g:HTMLPanel ui:field="shareSection" styleName="share-section hidden">
 
         <g:Label text="Condivisa con:" styleName="label2"/>
-        <g:FlowPanel ui:field="sharedUsersPanel" styleName="shared-users-panel"/>
-
+        <g:FlowPanel ui:field="sharedUsersPanel" />
         <g:Button ui:field="aggiungiUtenteButton" text="➕ Aggiungi utente" styleName="bottoneLogin"/>
     </g:HTMLPanel>
 
