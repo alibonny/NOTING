@@ -25,8 +25,8 @@
 
 
 
-            <!-- Contenitore SEZIONE CONDIVISIONE (nascosto di default) -->
-    <g:HTMLPanel ui:field="shareSection" styleName="share-section hidden">
+        <!-- Contenitore SEZIONE CONDIVISIONE (nascosto di default) -->
+        <g:HTMLPanel ui:field="shareSection" styleName="share-section hidden">
 
         <g:Label text="Condivisa con:" styleName="label2"/>
         <g:FlowPanel ui:field="sharedUsersPanel" styleName="shared-users-panel"/>
