@@ -228,6 +228,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         String username = user.getUsername();
         int noteId = notaModificata.getId();
         String owner = notaModificata.getOwnerUsername();
+        Note.Stato stato = notaModificata.getStato();
 
         // 2) Verifica lock: deve essere attivo e posseduto da 'username'
         var st = NoteLockManager.getInstance().status(noteId);
@@ -256,6 +257,15 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         if (!updated) {
             throw new NotingException("Nota non trovata.");
         }
+
+        if(stato == Note.Stato.Privata){
+            svuotaCondivisioneNota(noteId);
+        }
+        else{
+            throw new NotingException("Errore nello svuotare la lista di condivisione");
+        }
+
+
         // Rimetti la lista (se necessario nella tua impl)
         notesDB.put(owner, userNotes);
     }
@@ -263,6 +273,26 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     // 5) Commit persistente
     DBManager.commit();
     System.out.println("Nota aggiornata da " + username + " (ID " + noteId + ") titolo='" + notaModificata.getTitle() + "'");
+    }
+
+
+    @Override
+    public void svuotaCondivisioneNota(int notaId) throws NotingException {
+        if (notaId <= 0) {
+            throw new NotingException("ID nota non valido.");
+        }
+
+        ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
+        List<String> destinatari = listaCondivisione.get(notaId);
+
+        if (destinatari != null) {
+            destinatari.clear(); // svuota completamente la lista
+            listaCondivisione.put(notaId, destinatari); // aggiorna la mappa
+            DBManager.commit();
+            System.out.println("Lista di condivisione svuotata per la nota ID: " + notaId);
+        } else {
+            throw new NotingException("Lista di condivisione non trovata per la nota ID: " + notaId);
+        }
     }
 
     @Override
