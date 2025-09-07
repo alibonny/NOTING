@@ -15,11 +15,12 @@ import javax.servlet.http.HttpSession;
 
 import org.mapdb.Atomic;
 
+import com.google.gwt.sample.noting.shared.LockStatus;
+import com.google.gwt.sample.noting.shared.LockToken;
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NotingException; 
 import com.google.gwt.sample.noting.shared.User;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 
@@ -225,46 +226,43 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         }
         
         String username = user.getUsername();
+        int noteId = notaModificata.getId();
         String owner = notaModificata.getOwnerUsername();
 
-        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
-        ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
-        Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
-
-        synchronized (username.intern()) {
-            // recupero note dell'utente
-            List<Note> userNotes = notesDB.get(owner);
-            if (userNotes == null) {
-                userNotes = new ArrayList<>();
-            }
-
-            if (notaModificata.getId() <= 0) {
-                // nuova nota
-                //int newId = noteIdCounter.get();
-                //noteIdCounter.set(newId + 1);
-                //notaModificata.setId(newId);
-                //userNotes.add(notaModificata);
-                //System.out.println("Creata nuova nota ID: " + newId);
-                System.out.println("LA NOTA CHE VUOI AGGIORNARE NON è STATA TROVATA");
-            } else {
-                // nota esistente
-                boolean updated = false;
-                for (int i = 0; i < userNotes.size(); i++) {
-                    if (userNotes.get(i).getId() == notaModificata.getId()) {
-                        userNotes.set(i, notaModificata);
-                        updated = true;
-                        System.out.println("Aggiornata nota ID: " + notaModificata.getId());
-                        break;
-                    }
-                }
-                if (!updated) throw new NotingException("Nota non trovata.");
-            }
-
-            notesDB.put(owner, userNotes);
+        // 2) Verifica lock: deve essere attivo e posseduto da 'username'
+        var st = NoteLockManager.getInstance().status(noteId);
+        if (!(st.locked && username.equals(st.owner))) {
+            throw new NotingException("Non possiedi il lock di modifica su questa nota.");
         }
+        
 
-        DBManager.commit();
-        System.out.println("Nota aggiornata da " + username + " con titolo: " + notaModificata.getTitle());
+         // 3) Recupero archivio note
+    ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+    List<Note> userNotes = notesDB.get(owner);
+    if (userNotes == null) {
+        throw new NotingException("Nota non trovata (owner sconosciuto).");
+    }
+
+    // 4) Sezione critica per-NOTA (non per-utente!)
+    synchronized (("note-" + noteId).intern()) {
+        boolean updated = false;
+        for (int i = 0; i < userNotes.size(); i++) {
+            if (userNotes.get(i).getId() == noteId) {
+                userNotes.set(i, notaModificata);
+                updated = true;
+                break;
+            }
+        }
+        if (!updated) {
+            throw new NotingException("Nota non trovata.");
+        }
+        // Rimetti la lista (se necessario nella tua impl)
+        notesDB.put(owner, userNotes);
+    }
+
+    // 5) Commit persistente
+    DBManager.commit();
+    System.out.println("Nota aggiornata da " + username + " (ID " + noteId + ") titolo='" + notaModificata.getTitle() + "'");
     }
 
     @Override
@@ -539,6 +537,122 @@ public List<Note> getCondiviseConMe() throws NotingException {
             throw new NotingException("Utente non trovato nella lista di condivisione per la nota ID: " + notaId);
         }
     }
+
+
+    private User requireUser() throws NotingException {
+    HttpServletRequest request = this.getThreadLocalRequest();
+    HttpSession session = (request != null) ? request.getSession(false) : null;
+
+    User user = (session != null) ? (User) session.getAttribute("user") : null;
+
+    if (user == null) {
+        if (TEST_USER != null) {
+            // modalità test, utile in sviluppo/unit test
+            return TEST_USER;
+        } else {
+            throw new NotingException("Utente non autenticato.");
+        }
+    }
+    return user;
+    }
+
+
+      // =======================
+    // RPC LOCKING
+    // =======================
+    @Override
+    public LockStatus getLockStatus(int noteId) throws NotingException {
+        // opzionale: puoi verificare permessi di lettura su notaId
+        var st = NoteLockManager.getInstance().status(noteId);
+        return new LockStatus(st.noteId, st.locked, st.owner, st.expiresAt);
+    }
+
+    @Override
+    public LockToken tryAcquireLock(int noteId) throws NotingException {
+        User u = requireUser();
+        // (consigliato) consenti acquire solo se l'utente ha permessi di modifica
+        ensureCanEdit(u, noteId);
+
+        var tok = NoteLockManager.getInstance().tryAcquire(noteId, u.getUsername());
+        if (tok == null) {
+            var st = NoteLockManager.getInstance().status(noteId);
+            String owner = (st.owner != null) ? st.owner : "sconosciuto";
+            throw new NotingException("Nota in modifica da: " + owner);
+        }
+        System.out.println("[LOCK] ACQUIRE note=" + noteId + " by " + u.getUsername() + " exp=" + tok.expiresAt);
+        return new LockToken(tok.noteId, tok.username, tok.expiresAt);
+    }
+
+    @Override
+    public LockToken renewLock(int noteId) throws NotingException {
+        User u = requireUser();
+        var tok = NoteLockManager.getInstance().renew(noteId, u.getUsername());
+        if (tok == null) throw new NotingException("Lock scaduto o non posseduto.");
+        // Log sintetico
+        // System.out.println("[LOCK] RENEW note=" + noteId + " by " + u.getUsername());
+        return new LockToken(tok.noteId, tok.username, tok.expiresAt);
+    }
+
+    @Override
+    public void releaseLock(int noteId) throws NotingException {
+        User u = requireUser();
+        NoteLockManager.getInstance().release(noteId, u.getUsername());
+        System.out.println("[LOCK] RELEASE note=" + noteId + " by " + u.getUsername());
+    }
+
+    /**
+     * Verifica rapida: l'utente è owner o ha SCR su questa nota?
+     * Usa le tue strutture DBManager (notesDB, listaCondivisione, ecc.).
+     * Adatta se la tua logica permessi è diversa.
+     */
+    private void ensureCanEdit(User u, int noteId) throws NotingException {
+        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+        ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
+
+        // Cerca la nota per ID (tra tutte le note). Se hai un indice, usalo.
+        Note found = null;
+        String ownerUser = null;
+        for (Map.Entry<String, List<Note>> e : notesDB.entrySet()) {
+            for (Note n : e.getValue()) {
+                if (n.getId() == noteId) {
+                    found = n; ownerUser = e.getKey();
+                    break;
+                }
+            }
+            if (found != null) break;
+        }
+        if (found == null) throw new NotingException("Nota non trovata.");
+
+        String username = u.getUsername();
+        boolean isOwner = username.equals(ownerUser);
+        boolean canSCR = false;
+
+        if (found.getStato() == Note.Stato.CondivisaSCR) {
+            List<String> condivisi = listaCondivisione.get(noteId);
+            if (condivisi != null && condivisi.contains(username)) {
+                canSCR = true;
+            }
+        }
+
+        if (!(isOwner || canSCR)) {
+            throw new NotingException("Non hai i permessi per modificare questa nota.");
+        }
+    }
+
+    // =======================
+    // TUA LOGICA ESISTENTE...
+    // (altri metodi RPC già presenti)
+    // =======================
+
+
+
+
+
+
+
+
+
+
 
 }
 

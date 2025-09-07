@@ -25,5 +25,18 @@ public interface NoteService extends RemoteService {
     void annullaCondivisione(String username, int notaId) throws NotingException;
     void rimuoviUtenteCondivisione(int notaId, String username) throws NotingException;
 
+    // metodi per la gestione del lock
+    // Restuisce lo stato corrent edel lock per la nota indicata
+    LockStatus getLockStatus(int noteId) throws NotingException;
+
+    // Tenta di acquisire il lock per utente corrente
+    LockToken tryAcquireLock(int noteId) throws NotingException;
+
+    //Rinnova il lock posseduto dall'utente corrente
+    LockToken renewLock(int noteId) throws NotingException;
+
+    //Rilascia il lock posseduto dall'utente corrente
+    void releaseLock(int noteId) throws NotingException;
+
 
 }

@@ -26,4 +26,11 @@ public interface NoteServiceAsync {
     void creaCopiaNota(String username, int notaId, AsyncCallback<Void> callback);
     void annullaCondivisione(String username, int notaId, AsyncCallback<Void> callback);
     void rimuoviUtenteCondivisione(int notaId, String username, AsyncCallback<Void> callback);
+
+
+    // metodi per la gestione del lock
+    void getLockStatus(int noteId, AsyncCallback<LockStatus> callback);
+    void tryAcquireLock(int noteId, AsyncCallback<LockToken> callback);
+    void renewLock(int noteId, AsyncCallback<LockToken> callback);
+    void releaseLock(int noteId, AsyncCallback<Void> callback);
 }

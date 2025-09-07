@@ -10,4 +10,8 @@ public interface VisualizzaNotaViewListener {
     void onCreaUnaCopia(Note nota);
     void onAnnullaCondivisione(Note nota);
     void onRimuoviUtenteCondivisione(Note nota, String username);
+
+    void onRichiediLock(int noteId);
+
+
 }

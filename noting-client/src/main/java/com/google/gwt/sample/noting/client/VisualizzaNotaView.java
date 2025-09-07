@@ -142,7 +142,9 @@ public class VisualizzaNotaView extends Composite {
 
     @UiHandler("modificaButton")
     void onModificaClick(ClickEvent e) {
-       Note.Stato stato = (nota != null) ? nota.getStato() : null;
+
+
+     Note.Stato stato = (nota != null) ? nota.getStato() : null;
     String owner = (nota != null) ? nota.getOwnerUsername() : null;
     String utente = (user != null) ? user.getUsername() : null;
     boolean isOwner = owner != null && owner.equals(utente);
@@ -152,19 +154,38 @@ public class VisualizzaNotaView extends Composite {
         Window.alert("Non hai i permessi per modificare questa nota.");
         return;
     }
+    if (listener != null && nota != null) {
+        // opzionale: disabilita il bottone durante la richiesta
+        modificaButton.setEnabled(false);
+        listener.onRichiediLock(nota.getId());
+    }
+    }
 
-    if (stato == Note.Stato.CondivisaSCR || isOwner) {
-        // Pulsante Modifica è abilitato ma i campi restano NON editabili
+        // Chiamato da NotingApp quando il lock è stato CONFERMATO dal server
+    public void enableEditing(boolean isOwner) {
         titoloBox.setReadOnly(false);
         contenutoArea.setReadOnly(false);
-    }
-        if(isOwner){
-        statoBox.setEnabled(true);
+        if (isOwner) {
+            statoBox.setEnabled(true);
         }
-
         salvaButton.setVisible(true);
-       
+        modificaButton.setEnabled(true); // riabilita il bottone
     }
+
+    // Chiamato da NotingApp quando il lock è NEGATO o perso
+    public void disableEditingWithMessage(String message) {
+        // ripristina stato "solo lettura"
+        titoloBox.setReadOnly(true);
+        contenutoArea.setReadOnly(true);
+        statoBox.setEnabled(false);
+        salvaButton.setVisible(false);
+        modificaButton.setEnabled(true); // riabilita per eventuale retry
+        if (message != null && !message.isEmpty()) {
+            Window.alert(message);
+        }
+    }
+        
+    
 
     @UiHandler("salvaButton")
     void onSalvaClick(ClickEvent e) {
