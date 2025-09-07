@@ -56,7 +56,7 @@
           <configuration>
             <scanIntervalSeconds>1</scanIntervalSeconds>
             <webApp>
-              <extraClasspath>${basedir}/../noting-shared/target/classes/</extraClasspath>
+              <extraClasspath>${project.build.outputDirectory},${basedir}/../noting-shared/target/classes/</extraClasspath>
             </webApp>
             <contextXml>${basedir}/src/main/jettyconf/context.xml</contextXml>
             <jvmArgs>--add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</jvmArgs>
