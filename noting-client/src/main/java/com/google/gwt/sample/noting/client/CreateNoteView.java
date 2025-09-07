@@ -113,7 +113,6 @@ public void setUserList(List<String> usernames) {
     @UiHandler("shareBtn")
     void onShareClick(ClickEvent e) {
     String username = utenteBox.getText().trim();
-    String esistenti = utentiCondivisi.getText();
 
 
          if (listener != null) {

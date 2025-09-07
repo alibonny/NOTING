@@ -8,17 +8,17 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.mapdb.Atomic;
+
 import com.google.gwt.sample.noting.shared.LockStatus;
 import com.google.gwt.sample.noting.shared.LockToken;
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NotingException;
 import com.google.gwt.sample.noting.shared.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.mapdb.Atomic;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 
@@ -282,6 +282,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         String username = user.getUsername();
         int noteId = notaModificata.getId();
         String owner = notaModificata.getOwnerUsername();
+        Note.Stato stato = notaModificata.getStato();
 
         ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
         ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
@@ -323,6 +324,26 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         DBManager.commit();
         System.out.println("Nota aggiornata da " + username + " con titolo: " + notaModificata.getTitle());
 
+    }
+
+
+    @Override
+    public void svuotaCondivisioneNota(int notaId) throws NotingException {
+        if (notaId <= 0) {
+            throw new NotingException("ID nota non valido.");
+        }
+
+        ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
+        List<String> destinatari = listaCondivisione.get(notaId);
+
+        if (destinatari != null) {
+            destinatari.clear(); // svuota completamente la lista
+            listaCondivisione.put(notaId, destinatari); // aggiorna la mappa
+            DBManager.commit();
+            System.out.println("Lista di condivisione svuotata per la nota ID: " + notaId);
+        } else {
+            throw new NotingException("Lista di condivisione non trovata per la nota ID: " + notaId);
+        }
     }
 
     @Override
