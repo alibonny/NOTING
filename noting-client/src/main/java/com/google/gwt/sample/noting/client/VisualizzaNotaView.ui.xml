@@ -19,11 +19,8 @@
             <g:Button ui:field="salvaButton" text="Salva" styleName="bottoneLogin"/>
             <g:Button ui:field="eliminaButton" text="Elimina" styleName="bottoneLogin"/>
             <g:Button ui:field="creaUnaCopia" text="CreaCopia" styleName="bottoneLogin"/>
+            <g:Button ui:field="annullaCondivisione" text="Annulla Condivisione"/>
         </g:HorizontalPanel>
-
-
-        
-        <g:Button ui:field="annullaCondivisione" text="Annulla Condivisione"/>
 
         <!-- Contenitore SEZIONE CONDIVISIONE (nascosto di default) -->
         <g:HTMLPanel ui:field="shareSection" styleName="share-section hidden">
