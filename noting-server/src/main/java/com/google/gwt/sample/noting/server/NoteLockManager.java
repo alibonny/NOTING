@@ -6,6 +6,9 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.gwt.sample.noting.shared.LockStatus;
+import com.google.gwt.sample.noting.shared.LockToken;
+
 // garantisce che una sola persona alla volta modificichi una nota
 // ha un meccanismo di scadenza automatica del lock
 
@@ -37,7 +40,7 @@ final class NoteLockManager {
     }
 
     // Controlla lo stato attuale del lock
-    public synchronized Status status(int noteId) {
+    public synchronized LockStatus status(int noteId) {
         long now = System.currentTimeMillis();
         Entry entry = lockMap.get(noteId);
 
@@ -46,60 +49,59 @@ final class NoteLockManager {
             lockMap.remove(noteId);
             entry = null;
         } 
-        if(entry == null) return new Status(noteId, false, null, null);
+        if(entry == null) return new LockStatus(noteId, false, null, null);
             // Lock attivo
-             return new Status(noteId, true, entry.username, new Date(entry.expiresAtMillis));
+             return new LockStatus(noteId, true, entry.username, new Date(entry.expiresAtMillis));
     }
 
     // Tenta di acquisire il lock per l'utente specificato
-    public synchronized Token tryAcquire(int noteId, String username) {
+    public synchronized LockToken tryAcquire(int noteId, String username) {
         long now = System.currentTimeMillis();
         Entry entry = lockMap.get(noteId);
+           System.out.println("[LM] tryAcquire note=" + noteId + " reqUser=" + username +
+        " existing=" + (entry != null ? (entry.username + " exp=" + entry.expiresAtMillis) : "null") +
+        " now=" + now);
 
-        if (entry == null || entry.expiresAtMillis >= now &&
+        if (entry != null && entry.expiresAtMillis >= now &&
             !entry.username.equals(username)) {
+                        System.out.println("[LM] deny: another user holds valid lock");
+
                 return null;            
+        }
+        
+        // Se l'entry esiste ma è scaduta, pulisci
+        if (entry != null && entry.expiresAtMillis < now) {
+            lockMap.remove(noteId);
         }
         long exp = now + LEASE_MS;
         lockMap.put(noteId, new Entry(username, exp));
-        return new Token(noteId, username, new Date(exp));
+            System.out.println("[LM] grant lock to " + username + " until " + exp);
+
+        return new LockToken(noteId, username, new Date(exp));
     }
 
-    public synchronized Token renew(int noteId, String username) {
+    //rinnova la scadenza di un lock già esistente
+
+    public synchronized LockToken renew(int noteId, String username) {
         long now = System.currentTimeMillis();
         Entry entry = lockMap.get(noteId);
 
         if (entry == null || entry.expiresAtMillis < now || !entry.username.equals(username)) return null;
         entry.expiresAtMillis = now + LEASE_MS;
-        return new Token(noteId, username, new Date(entry.expiresAtMillis));
+        return new LockToken(noteId, username, new Date(entry.expiresAtMillis));
     }
 
+
+    //rilascia il lock 
     synchronized void release(int noteId, String username) {
+        //cerca il lock attuale della nota
         Entry entry = lockMap.get(noteId);
+        // se il lock esiste ed è dello stesso utente che ha chiesto il rilascio
         if (entry != null && entry.username.equals(username)) {
             lockMap.remove(noteId);
         }
     }
 
-    static final class Status {
-        final int noteId; final boolean locked; final String owner; final Date expiresAt;
-        Status(int noteId, boolean locked, String owner, Date expiresAt) {
-            this.noteId = noteId; this.locked = locked; this.owner = owner; this.expiresAt = expiresAt;
-        }
-    }
-    static final class Token {
-        final int noteId; final String username; final Date expiresAt;
-        Token(int noteId, String username, Date expiresAt) {
-            this.noteId = noteId; this.username = username; this.expiresAt = expiresAt;
-        }
-    }
-
-
-
-
-
-
-    
 
 
 }

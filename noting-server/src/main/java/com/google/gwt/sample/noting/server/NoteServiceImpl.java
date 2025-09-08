@@ -11,8 +11,6 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.mapdb.Atomic;
-
 import com.google.gwt.sample.noting.shared.LockStatus;
 import com.google.gwt.sample.noting.shared.LockToken;
 import com.google.gwt.sample.noting.shared.Note;
@@ -137,57 +135,18 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
             .distinct()
             .collect(Collectors.toList());
 
-
-        /* 
-        Note nuovaNota = new Note(titolo, contenuto, stato,destinatari,username);
-
-         // Assegno ID univoco PRIMA di usarlo come chiave nelle mappe
-        Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
-        int newId;
-        synchronized (noteIdCounter) {
-        newId = noteIdCounter.get();
-        noteIdCounter.set(newId + 1);
-         }
-        nuovaNota.setId(newId);
-     
-        // Salvo la nota nella lista dell'utente
-        synchronized (username.intern()) {
-        List<Note> userNotes = notesDB.get(username);
-        if (userNotes == null) {
-            userNotes = new ArrayList<>();
-        }
-        userNotes.add(nuovaNota);
-        notesDB.put(username, userNotes);
-        }
-
-        // Determino se lo stato è "condiviso" o "privato"
-         boolean isCondivisa =
-            stato == Note.Stato.Condivisa
-         || stato == Note.Stato.CondivisaSCR     // <-- rinomina se il tuo enum usa un altro identificatore
-         || "Condivisa".equalsIgnoreCase(stato.name())
-         || "CondivisainSCR".equalsIgnoreCase(stato.name());
-
-         // Inizializzo/aggiorno la lista di condivisione:
-           // - vuota se privata
-           // - lista degli username se condivisa
-         List<String> valoriCondivisione = isCondivisa ? destinatari : new ArrayList<>();
-         listaCondivisione.put(newId, valoriCondivisione);
-
-         DBManager.commit();
-        */
         Note nuovaNota = new Note(titolo, contenuto, stato, destinatari, username);
-
-        // Genero ID univoco
-        Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
-        int newId;
-        synchronized (noteIdCounter) {
-            newId = noteIdCounter.get();
-            noteIdCounter.set(newId + 1);
-        }
-        nuovaNota.setId(newId);
-
-        // Imposta l'owner se la classe Note lo prevede
         nuovaNota.setOwnerUsername(username); 
+
+    // ====== NUOVO BLOCCO: genera ID atomico e "prenota" sull'indice ======
+        int newId;
+        Note prev;
+        do {
+            newId = DBManager.nextNoteId();
+            nuovaNota.setId(newId);
+            prev = DBManager.getNoteById().putIfAbsent(newId, nuovaNota);
+           
+        } while (prev != null);
 
         // Salvo la nota nella lista dell'utente
         synchronized (username.intern()) {
@@ -198,9 +157,6 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
             userNotes.add(nuovaNota);
             notesDB.put(username, userNotes);
         }
-
-        // aggiorno l’indice globale per ID 
-        DBManager.getNoteById().put(newId, nuovaNota);
 
         // Determino se la nota è condivisa
         boolean isCondivisa =
@@ -229,7 +185,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         System.out.println("Nota creata da: " + username
             + " con titolo: " + titolo
             + " e stato: " + stato.name()
-            + " (ID=" + newId + "), condivisa con: " + valoriCondivisione);
+            + " (ID=" + nuovaNota.getId() + "), condivisa con: " + valoriCondivisione);
     }
     
 
@@ -265,66 +221,102 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     }
 
 
-    @Override
-    public void updateNota(Note notaModificata) throws NotingException {
-        HttpServletRequest request = getThreadLocalRequest();
-        HttpSession session = (request != null) ? request.getSession(false) : null;
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
+  @Override
+public void updateNota(Note notaModificata) throws NotingException {
+    HttpServletRequest request = getThreadLocalRequest();
+    HttpSession session = (request != null) ? request.getSession(false) : null;
+    User user = (session != null) ? (User) session.getAttribute("user") : null;
+    if (user == null) { 
+        if (TEST_USER != null) user = TEST_USER; 
+        else throw new NotingException("Utente di test non impostato. Impossibile aggiornare la nota."); 
+    }
 
-         if (user == null) {
-            if (TEST_USER != null) {
-                 user = TEST_USER;
-            } else {
-                 throw new NotingException("Utente di test non impostato. Impossibile aggiornare la nota.");
-            }
+    final String caller = user.getUsername();
+    final int noteId = notaModificata.getId();
+    if (noteId <= 0) throw new NotingException("ID nota non valido.");
+
+    final ConcurrentMap<Integer, Note> noteById = DBManager.getNoteById();
+    final ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+    final ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
+
+    // Lock fine-grained sulla singola nota
+    final Object noteLock = ("NOTE_LOCK_" + noteId).intern();
+    synchronized (noteLock) {
+
+        // 1) Recupero nota esistente e owner effettivo (owner non si cambia qui)
+        Note esistente = noteById.get(noteId);
+        if (esistente == null) throw new NotingException("Nota non trovata (ID=" + noteId + ").");
+        final String owner = esistente.getOwnerUsername();
+
+        // 2) Permessi: deve essere owner o utente condiviso attuale
+        boolean canEdit = caller.equals(owner);
+        if (!canEdit) {
+            List<String> currentShare = listaCondivisione.getOrDefault(noteId, List.of());
+            canEdit = currentShare.contains(caller);
         }
-        
-        String username = user.getUsername();
-        int noteId = notaModificata.getId();
-        String owner = notaModificata.getOwnerUsername();
-        Note.Stato stato = notaModificata.getStato();
+        if (!canEdit) throw new NotingException("Non hai i permessi per modificare questa nota.");
 
-        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
-        ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
-        Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
+        // 3) Prepara i nuovi campi (id e owner restano quelli dell'originale)
+        final String newTitle   = notaModificata.getTitle();
+        final String newContent = notaModificata.getContent();
+        final Note.Stato newStato = notaModificata.getStato();
 
-        synchronized (username.intern()) {
-            // recupero note dell'utente
+        // Normalizza destinatari: senza null, trim, distinct, no owner
+List<String> newDest = notaModificata.getUtentiCondivisi().stream()
+    .filter(Objects::nonNull)
+    .map(String::trim)
+    .filter(s -> !s.isEmpty())
+    .filter(s -> !s.equals(owner))   // non condividere con l’owner
+    .distinct()
+    .collect(Collectors.toList());
+
+        // Se diventa privata, nessuna condivisione
+        if (newStato == Note.Stato.Privata) {
+            newDest = List.of();
+        }
+
+        // 4) Crea l'oggetto aggiornato (mantieni id e owner originali)
+        Note aggiornata = new Note(newTitle, newContent, newStato, newDest, owner);
+        aggiornata.setId(noteId);
+        aggiornata.setOwnerUsername(owner);
+
+        // 5) Aggiorna indice globale in modo atomico (evita lost update)
+        boolean replaced = noteById.replace(noteId, esistente, aggiornata);
+        if (!replaced) {
+            throw new NotingException("La nota è stata modificata in parallelo. Riprova.");
+        }
+
+        // 6) Aggiorna la lista dell'owner
+        synchronized (owner.intern()) {
             List<Note> userNotes = notesDB.get(owner);
-            if (userNotes == null) {
-                userNotes = new ArrayList<>();
-            }
-
-            if (notaModificata.getId() <= 0) {
-                // nuova nota con ID non valido
-                System.out.println("LA NOTA CHE VUOI AGGIORNARE NON È STATA TROVATA");
-            } else {
-                // nota esistente
-                boolean updated = false;
-                for (int i = 0; i < userNotes.size(); i++) {
-                    if (userNotes.get(i).getId() == notaModificata.getId()) {
-                        // aggiorno lista utente
-                        userNotes.set(i, notaModificata);
-
-                        // aggiornamento indice globale
-                        DBManager.getNoteById().put(notaModificata.getId(), notaModificata);
-
-                        updated = true;
-                        System.out.println("Aggiornata nota ID: " + notaModificata.getId());
-                        break;
-                    }
+            if (userNotes == null) userNotes = new ArrayList<>();
+            boolean updated = false;
+            for (int i = 0; i < userNotes.size(); i++) {
+                if (userNotes.get(i).getId() == noteId) {
+                    userNotes.set(i, aggiornata);
+                    updated = true;
+                    break;
                 }
-                if (!updated) throw new NotingException("Nota non trovata.");
             }
-
-            // reinserisco lista aggiornata per forzare la persistenza
+            if (!updated) {
+                // Riallinea se per qualche motivo mancava
+                userNotes.add(aggiornata);
+            }
             notesDB.put(owner, userNotes);
         }
 
-        DBManager.commit();
-        System.out.println("Nota aggiornata da " + username + " con titolo: " + notaModificata.getTitle());
-
+        // 7) Riallinea SEMPRE la lista condivisione
+        if (aggiornata.getStato() == Note.Stato.Privata || aggiornata.getUtentiCondivisi().isEmpty()) {
+            listaCondivisione.remove(noteId);
+        } else {
+            listaCondivisione.put(noteId, aggiornata.getUtentiCondivisi());
+        }
     }
+
+    DBManager.commit();
+    System.out.println("Nota aggiornata da " + caller + " (ID=" + noteId + ", titolo: " + notaModificata.getTitle() + ")");
+}
+
 
 
     @Override
@@ -424,36 +416,6 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     }
 
-    /* 
-        @Override
-        public List<Note> getCondiviseConMe() throws NotingException {
-        HttpSession session = getThreadLocalRequest().getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            throw new NotingException("Utente non autenticato.");
-        }
-
-        String username = ((User) session.getAttribute("user")).getUsername();
-
-        ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
-        ConcurrentMap<Integer, Note> noteById = DBManager.getNoteById();
-
-        List<Note> result = new ArrayList<>();
-
-        // 1) Prendo gli ID delle note condivise con questo utente (gestendo null e duplicati)
-        for (Map.Entry<Integer, List<String>> entry : listaCondivisione.entrySet()) {
-        Integer idNota = entry.getKey();
-        List<String> destinatari = entry.getValue();
-
-            if (destinatari != null && destinatari.contains(username)) {
-                Note n = noteById.get(idNota);
-                if (n != null && !username.equals(n.getOwnerUsername())) { // opzionale: escludi le tue
-                    result.add(n);
-                }
-            }
-        }
-        return result;
-        }
-   */
 
     @Override
     public List<Note> getCondiviseConMe() throws NotingException {
@@ -494,18 +456,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     public void creaCopiaNota(String username, int notaId) throws NotingException {
         System.out.println("=== INIZIO creaCopiaNota - username: " + username + ", notaId: " + notaId + " ===");
         
-        // Stesso pattern di autenticazione degli altri metodi
-        HttpServletRequest request = this.getThreadLocalRequest();
-        HttpSession session = (request != null) ? request.getSession(false) : null;
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-
-        if (user == null) {
-            if (TEST_USER != null) {
-                user = TEST_USER;
-            } else {
-                throw new NotingException("Utente non autenticato.");
-            }
-        }
+       User user =  requireUser();
 
         // Verifica che l'username corrisponda all'utente autenticato
         if (!user.getUsername().equals(username)) {
@@ -518,11 +469,9 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
         // Cerca la nota originale dall'indice globale
         Note sorgente = DBManager.getNoteById().get(notaId);
-        if (sorgente == null) {
-            throw new NotingException("Nota con ID " + notaId + " non trovata.");
-        }
-
-        System.out.println("Nota trovata: " + sorgente.getTitle() + " di " + sorgente.getOwnerUsername());
+        if (sorgente == null)  throw new NotingException("Nota con ID " + notaId + " non trovata.");  
+        
+        System.out.println("Nota trovata: " + sorgente.getTitle() + " di " + sorgente.getOwnerUsername() + "ID:" + sorgente.getId());
 
         // Verifica accesso (proprietario o condivisa con l'utente)
         boolean hasAccess = false;
@@ -552,32 +501,28 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
             Collections.emptyList(), // Nessuna condivisione per la copia
             username // Il nuovo proprietario
         );
-
-        // Assegna nuovo ID
-        Atomic.Var<Integer> noteIdCounter = DBManager.getNoteIdCounter();
-        int newId;
-        synchronized (noteIdCounter) {
-            newId = noteIdCounter.get() + 1;
-            noteIdCounter.set(newId);
-        }
-        notaCopia.setId(newId);
         notaCopia.setOwnerUsername(username);
 
-        System.out.println("Creando copia con ID: " + newId + " per utente: " + username);
+
+    // ====== Genera ID atomico e "prenota" sull'indice globale ======
+        int newId;
+        Note prev;
+        do {
+            newId = DBManager.nextNoteId();     // <-- sostituisce getNoteIdCounter()
+            notaCopia.setId(newId);
+            prev = DBManager.getNoteById().putIfAbsent(newId, notaCopia);
+        } while (prev != null); // in collisione (rarissima), riprova
+
+        System.out.println("Creando copia con ID: " + notaCopia.getId() + " per utente: " + username);
 
         // Salva nella lista dell'utente (stesso pattern di creazioneNota)
         ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
         synchronized (username.intern()) {
             List<Note> userNotes = notesDB.get(username);
-            if (userNotes == null) {
-                userNotes = new ArrayList<>();
-            }
+            if (userNotes == null)  userNotes = new ArrayList<>();
             userNotes.add(notaCopia);
             notesDB.put(username, userNotes);
         }
-
-        // Aggiorna indice globale
-        DBManager.getNoteById().put(newId, notaCopia);
 
         DBManager.commit();
 
@@ -659,23 +604,34 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     public LockStatus getLockStatus(int noteId) throws NotingException {
         // opzionale: puoi verificare permessi di lettura su notaId
         var st = NoteLockManager.getInstance().status(noteId);
-        return new LockStatus(st.noteId, st.locked, st.owner, st.expiresAt);
+        return new LockStatus(st.getNoteId(), st.isLocked(), st.getProprietarioLock(), st.getExpiresDate());
     }
 
     @Override
     public LockToken tryAcquireLock(int noteId) throws NotingException {
         User u = requireUser();
+        System.out.println("[LOCK] tryAcquire START note=" + noteId + " user=" + u.getUsername());
+
+        if (noteId <= 0) throw new NotingException("noteId non valido: " + noteId);
+
+        
+    var stBefore = NoteLockManager.getInstance().status(noteId);
+    System.out.println("[LOCK] status BEFORE: locked=" + stBefore.isLocked() +
+        " owner=" + stBefore.getProprietarioLock() + " exp=" + stBefore.getExpiresDate());
         // (consigliato) consenti acquire solo se l'utente ha permessi di modifica
         ensureCanEdit(u, noteId);
 
         var tok = NoteLockManager.getInstance().tryAcquire(noteId, u.getUsername());
+      
         if (tok == null) {
             var st = NoteLockManager.getInstance().status(noteId);
-            String owner = (st.owner != null) ? st.owner : "sconosciuto";
-            throw new NotingException("Nota in modifica da: " + owner);
+        System.out.println("[LOCK] tryAcquire DENY note=" + noteId + " reqUser=" + u.getUsername() +
+            " statusNow locked=" + st.isLocked() + " owner=" + st.getProprietarioLock() + " exp=" + st.getExpiresDate());
+        String owner = (st.getProprietarioLock() != null) ? st.getProprietarioLock() : "sconosciuto";
+        throw new NotingException("Nota in modifica da: " + owner);
         }
-        System.out.println("[LOCK] ACQUIRE note=" + noteId + " by " + u.getUsername() + " exp=" + tok.expiresAt);
-        return new LockToken(tok.noteId, tok.username, tok.expiresAt);
+        System.out.println("[LOCK] ACQUIRE note=" + noteId + " by " + u.getUsername() + " exp=" + tok.getExpiresAt());
+        return new LockToken(tok.getNoteId(), tok.getUsername(), tok.getExpiresAt());
     }
 
     @Override
@@ -684,8 +640,8 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         var tok = NoteLockManager.getInstance().renew(noteId, u.getUsername());
         if (tok == null) throw new NotingException("Lock scaduto o non posseduto.");
         // Log sintetico
-        // System.out.println("[LOCK] RENEW note=" + noteId + " by " + u.getUsername());
-        return new LockToken(tok.noteId, tok.username, tok.expiresAt);
+         System.out.println("[LOCK] RENEW note=" + noteId + " by " + u.getUsername());
+        return new LockToken(tok.getNoteId(), tok.getUsername(), tok.getExpiresAt());
     }
 
     @Override

@@ -14,6 +14,7 @@ public interface NoteService extends RemoteService {
     void eliminaUltimaNota();
     List<Note> getNoteUtente() throws NotingException;
     void updateNota(Note notaModificata) throws NotingException;
+
     void svuotaCondivisioneNota(int notaId) throws NotingException;
     void eliminaNota(String username, int notaId) throws NotingException;
     List<Note> searchNotes(String query) throws NotingException;
@@ -27,7 +28,9 @@ public interface NoteService extends RemoteService {
     void rimuoviUtenteCondivisione(int notaId, String username) throws NotingException;
 
     // metodi per la gestione del lock
-    // Restuisce lo stato corrent edel lock per la nota indicata
+
+
+    // Restuisce lo stato corrent del lock per la nota indicata
     LockStatus getLockStatus(int noteId) throws NotingException;
 
     // Tenta di acquisire il lock per utente corrente
@@ -41,3 +44,6 @@ public interface NoteService extends RemoteService {
 
 
 }
+
+
+

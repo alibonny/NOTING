@@ -215,6 +215,7 @@ public class NotingApp implements EntryPoint {
     view.setVisualizzaNotaViewListener(new VisualizzaNotaViewListener() {
         @Override
         public void onBack() {
+            stopLockHeartbeat();
             loadHomeView(); // torna alla home
         }
 
@@ -323,6 +324,7 @@ public class NotingApp implements EntryPoint {
             @Override
             public void onFailure(Throwable caught) {
                 view.disableEditingWithMessage("Nota già in modifica da un altro utente: " + caught.getMessage());
+                loadHomeView();
             } 
         });
         
@@ -353,7 +355,7 @@ private void startLockHeartbeat(int noteId) {
             });
         }
     };
-    lockTimer.scheduleRepeating(30_000); // ogni 30s
+    lockTimer.scheduleRepeating(90_000); // ogni 30s
 }
 
 private void stopLockHeartbeat() {
