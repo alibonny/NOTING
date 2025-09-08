@@ -279,12 +279,8 @@ List<String> newDest = notaModificata.getUtentiCondivisi().stream()
         Note aggiornata = new Note(newTitle, newContent, newStato, newDest, owner);
         aggiornata.setId(noteId);
         aggiornata.setOwnerUsername(owner);
-
-        // 5) Aggiorna indice globale in modo atomico (evita lost update)
-        boolean replaced = noteById.replace(noteId, esistente, aggiornata);
-        if (!replaced) {
-            throw new NotingException("La nota è stata modificata in parallelo. Riprova.");
-        }
+        // 5) Sostituisco nell’indice globale (niente CAS)
+        noteById.put(noteId, aggiornata);
 
         // 6) Aggiorna la lista dell'owner
         synchronized (owner.intern()) {
