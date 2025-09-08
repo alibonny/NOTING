@@ -25,10 +25,7 @@ public class NotingApp implements EntryPoint {
         loadLoginView();
     }
 
-
-    
-
-/********* LoginView   ************* */
+    /********* LoginView   ************* */
 
     private void loadLoginView() {
         this.loggedInUser = null; 
@@ -299,7 +296,18 @@ public class NotingApp implements EntryPoint {
                 @Override
                 public void onSuccess(Void result) {
                     Window.alert("Utente rimosso dalla condivisione con successo!");
-                    loadVisualizzaNota(nota,user); // Ricarica la vista della nota per riflettere i cambiamenti
+
+                    // --- sincronizziamo l'oggetto Note in memoria ---
+                    List<String> utenti = nota.getUtentiCondivisi();
+                    if (utenti != null) {
+                        // rimuovi tutte le occorrenze del username (safety)
+                        while (utenti.remove(username)) { /* rimuove tutte */ }
+                        // reimposta la lista (Note.setUtentiCondivisi crea una copia internamente)
+                        nota.setUtentiCondivisi(utenti);
+                    }
+
+                    // ricarica la vista con l'oggetto nota aggiornato
+                    loadVisualizzaNota(nota, user);
                 }
 
                 @Override
