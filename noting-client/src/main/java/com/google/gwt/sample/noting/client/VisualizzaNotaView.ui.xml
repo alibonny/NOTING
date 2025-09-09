@@ -31,5 +31,12 @@
     </g:HTMLPanel>
 
 
+            <!-- Barra di ricerca + Conferma -->
+        <g:HorizontalPanel spacing="10" styleName="search-panel">
+            <g:SuggestBox ui:field="cercaUtenteDaAggiungere" styleName="status" />
+            <g:Button ui:field="confermaUtenteDaAggiungere" text="Conferma" styleName="bottoneLogin"/>
+        </g:HorizontalPanel>
+
+
     </g:HTMLPanel>
 </ui:UiBinder>

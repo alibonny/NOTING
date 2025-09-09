@@ -56,9 +56,19 @@ public interface NoteServiceAsync {
     void register(String username, String password, AsyncCallback<User> arg3);
     void releaseLock(int noteId, AsyncCallback<Void> arg2);
     void renewLock(int noteId, AsyncCallback<LockToken> arg2);
-    void rimuoviUtenteCondivisione(int notaId, String username, AsyncCallback<Void> arg3);
+    void rimuoviUtenteCondivisione(int notaId, String username, AsyncCallback<Note> arg3);
     void searchNotes(String query, AsyncCallback<List<Note>> arg2);
     void svuotaCondivisioneNota(int notaId, AsyncCallback<Void> arg2);
     void tryAcquireLock(int noteId, AsyncCallback<LockToken> arg2);
     void updateNota(Note notaModificata, AsyncCallback<Void> arg2);
+    
+    
+    
+    
+    void cercaUtente2(Note nota, String username, AsyncCallback<Boolean> arg) ;
+    void aggiungiCondivisione(int noteId, String username, AsyncCallback<Note> callback);
+    void getNotaById(int noteId, AsyncCallback<Note> cb);
+
+
+
 }

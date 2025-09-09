@@ -8,6 +8,7 @@ import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
@@ -16,6 +17,7 @@ import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
@@ -37,6 +39,8 @@ public class VisualizzaNotaView extends Composite {
     @UiField HTMLPanel shareSection;
     @UiField FlowPanel sharedUsersPanel;
     @UiField Button aggiungiUtenteButton;
+    @UiField SuggestBox cercaUtenteDaAggiungere;
+    @UiField Button confermaUtenteDaAggiungere;
 
     private VisualizzaNotaViewListener listener;
     private Note nota; //così salviamo la nota corrente
@@ -107,38 +111,81 @@ public class VisualizzaNotaView extends Composite {
     if((nota.getStato() == Note.Stato.Condivisa || nota.getStato() == Note.Stato.CondivisaSCR)
      && nota.getOwnerUsername().equals(utente)) {
         shareSection.setVisible(true);
-
-        // Popola la lista degli utenti con cui la nota è condivisa
-        sharedUsersPanel.clear();
-        if (nota.getUtentiCondivisi() != null && !nota.getUtentiCondivisi().isEmpty()) {
-            for (String utente1 : nota.getUtentiCondivisi()) {
-                HorizontalPanel row = new HorizontalPanel();
-                row.setSpacing(5);
-
-                Label userLabel = new Label(utente1);
-                Button removeButton = new Button("X");
-                removeButton.addClickHandler(e -> onRemoveUserClick(nota,utente1));
-
-                row.add(userLabel);
-                row.add(removeButton);
-
-                sharedUsersPanel.add(row);
-            }
-        } else {
-            sharedUsersPanel.add(new HTML("Nessun utente con cui è condivisa questa nota."));
-            }
+        renderCondivisioni();
+     
         }else {
         shareSection.setVisible(false);
+        sharedUsersPanel.clear();
         }
 
-
+         cercaUtenteDaAggiungere.setVisible(false);
+        confermaUtenteDaAggiungere.setVisible(false);
 
     }
-
 
     public void setVisualizzaNotaViewListener(VisualizzaNotaViewListener listener) {
         this.listener = listener;
     }
+
+    @UiHandler("aggiungiUtenteButton")  
+    void onAggiungiUtenteClick(ClickEvent e){
+
+    cercaUtenteDaAggiungere.setVisible(true);
+    confermaUtenteDaAggiungere.setVisible(true);
+    cercaUtenteDaAggiungere.setText("");
+    cercaUtenteDaAggiungere.setFocus(true);
+
+    }
+
+    @UiHandler("confermaUtenteDaAggiungere")
+void onConfermaUtenteDaAggiungereClick(ClickEvent e) {
+    String username = cercaUtenteDaAggiungere.getText().trim();
+    if (username.isEmpty()) {
+        Window.alert("Inserisci uno username.");
+        return;
+    }
+    aggiuntiUtenteListaCondivisa(username);
+}
+
+
+    private void aggiuntiUtenteListaCondivisa(final String usernameDaAggiungere) {
+    if (listener == null) return;
+
+   confermaUtenteDaAggiungere.setEnabled(false);
+
+    listener.trovaUtente2(nota, usernameDaAggiungere, new AsyncCallback<Boolean>() {
+        @Override public void onSuccess(Boolean exist) {
+            if (!Boolean.TRUE.equals(exist)) {
+                Window.alert("Utente non trovato");
+                confermaUtenteDaAggiungere.setEnabled(false);
+                return;
+            }
+            // chiediamo al server di aggiungere davvero userNorm tra i condivisi della nota notaId
+            listener.aggiungiCondivisione(nota.getId(), usernameDaAggiungere, new AsyncCallback<Note>() {
+                @Override public void onSuccess(Note fresh) {
+                    nota = fresh;
+                    shareSection.setVisible(true);
+                    renderCondivisioni();
+                    Window.alert("Utente " + usernameDaAggiungere + " aggiunto con successo!");
+                    cercaUtenteDaAggiungere.setText("");
+                    cercaUtenteDaAggiungere.setVisible(false);
+                    confermaUtenteDaAggiungere.setVisible(false);
+                    confermaUtenteDaAggiungere.setEnabled(true);
+                    salvaButton.setVisible(true);
+                }
+                @Override public void onFailure(Throwable caught) {
+                    Window.alert("Errore nel salvataggio della condivisione: " + caught.getMessage());
+                    confermaUtenteDaAggiungere.setEnabled(true);
+                }
+            });
+        }
+        @Override public void onFailure(Throwable caught) {
+            Window.alert("Errore durante la ricerca: " + caught.getMessage());
+            confermaUtenteDaAggiungere.setEnabled(true);
+        }
+    });
+}
+
 
     @UiHandler("modificaButton")
     void onModificaClick(ClickEvent e) {
@@ -187,10 +234,10 @@ public class VisualizzaNotaView extends Composite {
         
     
 
-    @UiHandler("salvaButton")
-    void onSalvaClick(ClickEvent e) {
-    // Commit valori UI → model
-    String selectedValue = statoBox.getSelectedValue(); // ora è valorizzato (addItem(label,value))
+@UiHandler("salvaButton")
+void onSalvaClick(ClickEvent e) {
+    // UI → model
+    String selectedValue = statoBox.getSelectedValue();
     if (selectedValue == null) selectedValue = statoBox.getItemText(statoBox.getSelectedIndex());
 
     nota.setTitle(titoloBox.getText());
@@ -199,18 +246,62 @@ public class VisualizzaNotaView extends Composite {
         nota.setStato(Note.Stato.valueOf(selectedValue));
     }
 
-    // Chiudi edit
+    // Chiudi edit lato UI
     titoloBox.setReadOnly(true);
     contenutoArea.setReadOnly(true);
     statoBox.setEnabled(false);
     salvaButton.setVisible(false);
-
-    Window.alert("Nota salvata con successo!\nTitolo: " + nota.getTitle() + "\nStato: " + nota.getStato().name());
+    salvaButton.setEnabled(false); // evita doppi click
 
     if (listener != null) {
+        // invia salvataggio
         listener.onSalvaNota(nota);
+
+        // ricarica la nota fresca dal server e allinea la UI
+        listener.getNotaById(nota.getId(), new AsyncCallback<Note>() {
+            @Override
+            public void onSuccess(Note fresh) {
+                nota = fresh;
+
+                // riallinea combo stato
+                String state = nota.getStato().name();
+                for (int i = 0; i < statoBox.getItemCount(); i++) {
+                    if (state.equals(statoBox.getValue(i))) {
+                        statoBox.setSelectedIndex(i);
+                        break;
+                    }
+                }
+
+                // mostra/nascondi sezione condivisione e ridisegna
+                boolean isOwner  = user != null && nota.getOwnerUsername().equals(user.getUsername());
+                boolean isShared = (nota.getStato() == Note.Stato.Condivisa || nota.getStato() == Note.Stato.CondivisaSCR);
+                shareSection.setVisible(isOwner && isShared);
+                if (shareSection.isVisible()) {
+                    renderCondivisioni();
+                } else {
+                    sharedUsersPanel.clear();
+                }
+
+                // messaggio finale
+                Window.alert("Nota salvata con successo!\nTitolo: " + nota.getTitle()
+                             + "\nStato: " + nota.getStato().name());
+                salvaButton.setEnabled(true);
+            }
+
+            @Override
+            public void onFailure(Throwable caught) {
+                // in caso di errore, riapri l’editing per non perdere il lavoro
+                titoloBox.setReadOnly(false);
+                contenutoArea.setReadOnly(false);
+                statoBox.setEnabled(true);
+                salvaButton.setVisible(true);
+                salvaButton.setEnabled(true);
+                Window.alert("Errore nel recupero della nota aggiornata: " + caught.getMessage());
+            }
+        });
     }
-    }
+}
+
 
     @UiHandler("eliminaButton")
     void onEliminaClick(ClickEvent e) {
@@ -245,12 +336,54 @@ public class VisualizzaNotaView extends Composite {
     }
 
 
-    private void onRemoveUserClick(Note nota,String username) {
-        boolean confirm = Window.confirm("Rimuovere l'utente " + username + " dalla condivisione?");
-        if (confirm && listener != null) {
-            listener.onRimuoviUtenteCondivisione(nota, username);
+   private void onRemoveUserClick(Note n, String username) {
+    boolean confirm = Window.confirm("Rimuovere l'utente " + username + " dalla condivisione?");
+    if (!confirm || listener == null) return;
+
+    // (opzionale) disabilita la UI del pannello per evitare doppi click
+    // es.: removeButton.setEnabled(false); se tieni un riferimento
+
+    listener.onRimuoviUtenteCondivisione(n, username, new AsyncCallback<Note>() {
+        @Override public void onSuccess(Note fresh) {
+            nota = fresh;
+            // Se non è più condivisa o non sei owner, nascondi la sezione
+            boolean isOwner  = nota.getOwnerUsername().equals(user.getUsername());
+            boolean isShared = (nota.getStato() == Note.Stato.Condivisa || nota.getStato() == Note.Stato.CondivisaSCR);
+            shareSection.setVisible(isOwner && isShared);
+
+            if (shareSection.isVisible()) {
+                renderCondivisioni();              // <<-- ridisegna la lista
+            } else {
+                sharedUsersPanel.clear();
+            }
         }
+        @Override public void onFailure(Throwable caught) {
+            Window.alert("Errore nella rimozione: " + caught.getMessage());
+            // (opzionale) riabilita pulsante X se l’avevi disabilitato
+        }
+    });
+}
+
+
+    // rigenera elenco visuale degli utenti condivisi della nota corrente
+    private void renderCondivisioni() {
+    sharedUsersPanel.clear();
+    if (nota.getUtentiCondivisi() != null && !nota.getUtentiCondivisi().isEmpty()) {
+        for (String u : nota.getUtentiCondivisi()) {
+            HorizontalPanel row = new HorizontalPanel();
+            row.setSpacing(5);
+            Label userLabel = new Label(u);
+            Button removeButton = new Button("X");
+            removeButton.addClickHandler(e -> onRemoveUserClick(nota, u));
+            row.add(userLabel);
+            row.add(removeButton);
+            sharedUsersPanel.add(row);
+        }
+    } else {
+        sharedUsersPanel.add(new HTML("Nessun utente con cui è condivisa questa nota."));
     }
+}
+
 
    
 

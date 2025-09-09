@@ -71,19 +71,7 @@ void onStatoBoxChange(ChangeEvent event) {
         utenteBox.setVisible(true);
     }
 }
-/* 
-public void setUserList(List<String> usernames) {
-        userListBox.clear();
-        for (String username : usernames) {
-            userListBox.addItem(username);
-        }
-    }
-*/
-/* 
-    public String getSelectedUser() {
-        return utenteBox
-    }
-*/
+
    @UiHandler("saveButton")
     void onSaveClick(ClickEvent e) {
         String titolo = titoloBox.getText();

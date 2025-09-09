@@ -178,16 +178,16 @@ public class NotingApp implements EntryPoint {
 
             @Override
             public void trovaUtente(String username, AsyncCallback<Boolean> callback) {
-                service.cercaUtente( username,new AsyncCallback<Boolean>() {
-            @Override
-            public void onSuccess(Boolean exists) {
-                if (Boolean.TRUE.equals(exists)) {
-                    callback.onSuccess(true);
-                    // eventuale logica di condivisione, es: service.condividiNota(...)
-                } else {
-                    callback.onSuccess(false);
+                    service.cercaUtente( username,new AsyncCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean exists) {
+                    if (Boolean.TRUE.equals(exists)) {
+                        callback.onSuccess(true);
+                        // eventuale logica di condivisione, es: service.condividiNota(...)
+                    } else {
+                        callback.onSuccess(false);
+                    }
                 }
-            }
 
             @Override
             public void onFailure(Throwable caught) {
@@ -291,23 +291,16 @@ public class NotingApp implements EntryPoint {
         }
 
         @Override
-        public void onRimuoviUtenteCondivisione(Note nota, String username){
-            service.rimuoviUtenteCondivisione(nota.getId(),username, new AsyncCallback<Void>() {
+        public void onRimuoviUtenteCondivisione(Note nota, String username, AsyncCallback<Note> callback){
+            service.rimuoviUtenteCondivisione(nota.getId(),username, new AsyncCallback<Note>() {
                 @Override
-                public void onSuccess(Void result) {
+                public void onSuccess(Note fresh) {
                     Window.alert("Utente rimosso dalla condivisione con successo!");
 
-                    // --- sincronizziamo l'oggetto Note in memoria ---
-                    List<String> utenti = nota.getUtentiCondivisi();
-                    if (utenti != null) {
-                        // rimuovi tutte le occorrenze del username (safety)
-                        while (utenti.remove(username)) { /* rimuove tutte */ }
-                        // reimposta la lista (Note.setUtentiCondivisi crea una copia internamente)
-                        nota.setUtentiCondivisi(utenti);
-                    }
+                   
 
                     // ricarica la vista con l'oggetto nota aggiornato
-                    loadVisualizzaNota(nota, user);
+                    loadVisualizzaNota(fresh, user);
                 }
 
                 @Override
@@ -335,9 +328,62 @@ public class NotingApp implements EntryPoint {
                 loadHomeView();
             } 
         });
-        
     }
+
+      
+         @Override
+        public void trovaUtente2(Note nota,String username, AsyncCallback<Boolean> callback) {
+                System.out.println("cerca utente" + username);
+
+                service.cercaUtente2(nota,username,new AsyncCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean exists) {
+                    if (Boolean.TRUE.equals(exists)) {
+
+                        callback.onSuccess(true);
+                        // eventuale logica di condivisione, es: service.condividiNota(...)
+                    } else {
+                        callback.onSuccess(false);
+                    }
+                }
+                 @Override
+                 public void onFailure(Throwable caught) {
+                    Window.alert("Errore nella ricerca utente: " + caught.getMessage());
+                 }
+            });
+        }
+
+
+            @Override
+            public void aggiungiCondivisione(int notaId, String username, AsyncCallback<Note> callback){
+                service.aggiungiCondivisione(notaId, username, new AsyncCallback<Note>() {
+            @Override
+            public void onSuccess(Note result) {
+                // inoltra al callback del caller
+                callback.onSuccess(result);
+            }
+
+            @Override
+            public void onFailure(Throwable caught) {
+                // inoltra al callback del caller
+                callback.onFailure(caught);
+            }
+                
+            });
+        
+        }
+        @Override
+public void getNotaById(int noteId, AsyncCallback<Note> callback) {
+    service.getNotaById(noteId, callback);
+}
+
     });
+                
+
+       
+      
+            
+
     
         
                 
@@ -379,5 +425,6 @@ private void stopLockHeartbeat() {
 }
 
 
-}
+ }
+
 

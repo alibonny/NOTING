@@ -20,6 +20,10 @@ public interface NoteService extends RemoteService {
     List<Note> searchNotes(String query) throws NotingException;
     List<String> getAllUsernames();
     boolean cercaUtente(String username) throws NotingException;
+    
+    boolean cercaUtente2(Note nota, String username) throws NotingException;
+    Note aggiungiCondivisione(int noteId,String username) throws  NotingException;
+    Note getNotaById(int noteId) throws NotingException;
 
     List<Note> getCondiviseConMe() throws NotingException;
 

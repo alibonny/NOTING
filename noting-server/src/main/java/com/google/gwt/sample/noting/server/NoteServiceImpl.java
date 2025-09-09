@@ -175,8 +175,9 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
             listaCondivisione.put(newId, destinatari);
             System.out.println("ID " + newId + " condivisa con: " + destinatari);
         } else {
-            valoriCondivisione = Collections.emptyList();
-            listaCondivisione.remove(newId); // non lasciare tracce di note private
+            valoriCondivisione = new ArrayList<>();
+            listaCondivisione.put(newId,valoriCondivisione);
+
             System.out.println("ID " + newId + " NON condivisa (nota privata)");
         }
 
@@ -394,29 +395,108 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     @Override
     public boolean cercaUtente(String username) throws NotingException {
-         HttpSession session = getThreadLocalRequest().getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            throw new NotingException("Utente non autenticato.");
-        }
-
-        User username_proprietario = (User) session.getAttribute("user");
-
-        boolean risultato = false;
-        String usernameDb = DBManager.getUsersDatabase().get(username);
-        for (String user : DBManager.getUsersDatabase().keySet()) {
-
-        //Window.alert("user = " + user);
-        //Window.alert("username_proprietario = " + username_proprietario.getUsername());
-        // Utente trovato, ma non deve essere lo stesso che è loggato
-        if (user.equals(username) ){   
-            
-            risultato = true;
-        }
+    System.out.println("CERCA UTENTE");
+    System.out.println(username);
+     HttpSession session = getThreadLocalRequest().getSession(false);
+    if (session == null || session.getAttribute("user") == null) {
+        throw new NotingException("Utente non autenticato.");
     }
 
-        return risultato; // Utente non trovato 
+    // normalizza input
+    if (username == null)  {
+    System.out.println(username);
+    return false;
+    }
+    username = username.trim();
+    if (username.isEmpty()) return false;
+
+    System.out.println("username da aggiungere" + username);
+
+    User logged = (User) session.getAttribute("user");
+
+    // non permettere di “trovare” te stesso (evita condivisione con sé)
+    if (logged.getUsername().equals(username)) {
+        return false;
+    }
+
+    // verifica esistenza utente nel DB (username -> password)
+    // evitare get() inutile e loop: basta containsKey
+    return DBManager.getUsersDatabase().containsKey(username);
 
     }
+
+
+     @Override
+    public boolean cercaUtente2(Note nota, String username) throws NotingException {
+    User logged = requireUser();
+
+    if (username == null) return false;
+    username = username.trim();
+    if (username.isEmpty()) return false;
+
+    if (logged.getUsername().equals(username)) return false;
+
+    boolean exists = DBManager.getUsersDatabase().containsKey(username);
+    System.out.println("Risultato cercaUtente2 per " + username + ": " + exists);
+    return exists;
+    }
+
+  @Override
+public Note aggiungiCondivisione(int noteId, String username) throws NotingException {
+    HttpSession s = getThreadLocalRequest().getSession(false);
+    if (s == null || s.getAttribute("user") == null) {
+        throw new NotingException("Utente non autenticato.");
+    }
+    User logged = (User) s.getAttribute("user");
+
+    if (username == null) throw new NotingException("Username mancante.");
+    if (username.isEmpty()) throw new NotingException("Username vuoto.");
+
+    ConcurrentMap<Integer, Note> noteById = DBManager.getNoteById();
+    Note nota = noteById.get(noteId);
+    if (nota == null) throw new NotingException("Nota inesistente.");
+
+    
+    if (!DBManager.getUsersDatabase().containsKey(username)) {
+        throw new NotingException("Utente non esistente.");
+    }
+    if (logged.getUsername().equals(username)) {
+        throw new NotingException("Non puoi condividere con te stesso.");
+    }
+
+    // aggiorna lista condivisione con stampe di debug
+    ConcurrentMap<Integer, List<String>> shareMap = DBManager.getListaCondivisione();
+
+    List<String> lista = shareMap.get(noteId);
+    if (lista == null) {
+    lista = new ArrayList<>();
+    shareMap.put(noteId, lista);
+    }
+    if (!lista.contains(username)) {
+    lista.add(username);
+    DBManager.commit();
+    System.out.println("Aggiunto utente: " + username);
+} else {
+    System.out.println("Utente già presente nella lista");
+}
+
+    nota.setUtentiCondivisi(new ArrayList<>(lista));
+
+
+    return nota;
+}
+
+
+
+    @Override
+public Note getNotaById(int noteId) throws NotingException {
+    Note n = DBManager.getNoteById().get(noteId);
+    if (n == null) throw new NotingException("Nota inesistente.");
+    List<String> lst = DBManager.getListaCondivisione().get(noteId);
+    Note dto = n;
+    dto.setUtentiCondivisi(lst == null ? new ArrayList<>() : new ArrayList<>(lst));
+    return dto;
+}
 
 
     @Override

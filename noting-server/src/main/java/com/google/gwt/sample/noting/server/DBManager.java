@@ -37,7 +37,7 @@ public class DBManager implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         System.out.println("[DB] Inizializzazione MapDB (file)...");
-        final String dbPath = sce.getServletContext().getRealPath("/WEB-INF/noting-v2.db");
+        final String dbPath = sce.getServletContext().getRealPath("/WEB-INF/noting-v3.db");
         final File dbFile = new File(dbPath);
         dbFile.getParentFile().mkdirs();
 
