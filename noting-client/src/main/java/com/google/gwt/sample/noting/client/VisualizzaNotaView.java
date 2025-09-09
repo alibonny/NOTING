@@ -166,7 +166,7 @@ void onConfermaUtenteDaAggiungereClick(ClickEvent e) {
                     nota = fresh;
                     shareSection.setVisible(true);
                     renderCondivisioni();
-                    Window.alert("Utente " + usernameDaAggiungere + " aggiunto con successo!");
+                    Window.alert("Utente " + usernameDaAggiungere + " aggiunto con successo!\nRICORDA DI SALVARE PRIMA DI TORNARE ALLA HOME");
                     cercaUtenteDaAggiungere.setText("");
                     cercaUtenteDaAggiungere.setVisible(false);
                     confermaUtenteDaAggiungere.setVisible(false);
