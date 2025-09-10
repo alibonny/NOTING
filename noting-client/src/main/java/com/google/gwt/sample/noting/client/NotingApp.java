@@ -31,7 +31,10 @@ public class NotingApp implements EntryPoint {
         this.loggedInUser = null; 
         LoginView loginView = new LoginView();
         
-        loginView.setLogListener((username, password) -> {
+        loginView.setLogListener(new LogListener() {
+            @Override
+            public void onLogin(String username,String password){
+        
             service.login(username, password, new AsyncCallback<User>() {
                 @Override
                 public void onSuccess(User user) {
@@ -44,8 +47,23 @@ public class NotingApp implements EntryPoint {
                     Window.alert("Login fallito: " + caught.getMessage());
                 }
             });
-        });
+        }
 
+        @Override
+        public void onRegister(String username, String password){
+            service.register(username, password, new AsyncCallback<User>(){
+                @Override
+                public void onSuccess(User user){
+                    Window.alert("Registrazione completata");
+                }
+                @Override
+                public void onFailure(Throwable caught){
+                    Window.alert("Register fallito" + caught.getMessage());
+                }
+            });
+        }
+
+    });
         RootPanel.get().clear();
         RootPanel.get().add(loginView);
     }

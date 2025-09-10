@@ -33,36 +33,32 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
             throw new NotingException("Username e password non possono essere vuoti.");
         }
 
+        username = username.trim();
+        if (username.isEmpty() || password.isEmpty())
+          {  throw new NotingException("Username e password non possono essere vuoti."); 
+        }
+
+
+
         ConcurrentMap<String, String> users = DBManager.getUsersDatabase();
         String storedPassword = users.get(username);
 
         if (storedPassword != null && storedPassword.equals(password)) {
             User user = new User(username);
-             // Guardia per evitare NPE quando esegui i test senza servlet/sessione
-            HttpServletRequest request = this.getThreadLocalRequest();
-            if (request != null) {
-            HttpSession session = request.getSession(true);
-            if (session != null) {
-                session.setAttribute("user", user);
-            }
-        }
-
-           // HttpServletRequest request = this.getThreadLocalRequest();
-           // HttpSession session = request.getSession(true);
-           // session.setAttribute("user", user);
+            saveUserInSession(user);
             return user;
-        } else {
-            throw new NotingException("Credenziali non valide.");
         }
+        throw new NotingException("Credenziali non valide");
+
+          
     }
 
     @Override
     public void logout() {
         HttpServletRequest request = this.getThreadLocalRequest();
+        if (request == null) return;
         HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
+        if (session != null) session.invalidate();
     }
     
     @Override
@@ -72,68 +68,86 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         }
 
         ConcurrentMap<String, String> users = DBManager.getUsersDatabase();
-        
-        if (users.putIfAbsent(username.trim(), password) == null) {
-            DBManager.commit();
-            return new User(username.trim());
-        } else {
-            throw new NotingException("Username già esistente.");
-        }
+            
+            if (users.putIfAbsent(username.trim(), password) == null) {
+                DBManager.commit();
+                User user = new User(username);
+
+                saveUserInSession(user);
+                return user;
+            } 
+                throw new NotingException("Username già esistente.");
+            
     }
 
     @Override
     public void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String> utentiCondivisi) throws NotingException { //aggiungere lista degli utenti a cui condividere la nota
-        HttpServletRequest request = this.getThreadLocalRequest();
-        HttpSession session = (request != null) ? request.getSession(false) : null;
-
-        // if (session == null || session.getAttribute("user") == null) {
-        //     throw new NotingException("Utente non autenticato. Impossibile creare la nota.");
-        // }
-
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-
-        if(user == null){
-            if(TEST_USER != null){
-                user = TEST_USER;
-            } else {
-                throw new NotingException("Utente di test non impostato. Impossibile creare la nota.");
-            }
-        }
+        User user = requireUser();
 
         String username = user.getUsername();
         System.out.println("Creazione nota per utente: " + username);
 
-        // ===========================
-        //  SVUOTA SUBITO IL "DB"
-        // ===========================
-        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
-        ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
-        /* 
-        try {
-            // Svuota entrambe le mappe e azzera il contatore ID
-            notesDB.clear();
-            listaCondivisione.clear();
-            DBManager.getNoteIdCounter().set(0);
-            DBManager.commit();
-            System.out.println("[DEV] DB svuotato: notesDB, listaCondivisione e contatore ID azzerati.");
-        } catch (Exception ex) {
-            // In caso di dati vecchi/incompatibili, prova almeno a “resettare” le mappe
-            System.err.println("[DEV] Errore durante lo svuotamento MapDB: " + ex);
-            // Se hai un metodo di utilità in DBManager per re-inizializzare, chiamalo qui:
-            // DBManager.reinitNotesAndShares(); // <-- opzionale, se lo implementi
-            // In alternativa, prova comunque a proseguire con mappe vuote logiche:
-            // (non c'è molto altro da fare senza rigenerare il file fisico)
-        } 
-        */
+        if(titolo == null || titolo.trim().isEmpty())
+            throw new NotingException("Il titolo non può essere vuoto.");
+        titolo = titolo.trim();
 
-        List<String> destinatari = (utentiCondivisi == null ? Collections.<String>emptyList() : utentiCondivisi)
-            .stream()
+        if(contenuto == null) contenuto = "";
+        if (stato == null) stato = Note.Stato.Privata;
+
+        List<String> destinatari = (utentiCondivisi == null) ? List.of()
+        : utentiCondivisi.stream()
             .filter(Objects::nonNull)
             .map(String::trim)
             .filter(s -> !s.isEmpty())
-            .filter(s -> !s.equals(username)) 
+            .filter(s -> !s.equals(username)) // non condividere con te stesso
             .distinct()
+            .filter(u -> DBManager.getUsersDatabase().containsKey(u)) // opzionale ma consigliato
             .collect(Collectors.toList());
+
+            // 4) Costruisci nota con ID atomico
+        int id = DBManager.nextNoteId();
+        Note n = new Note(titolo, contenuto, stato);
+        n.setId(id);
+        n.setOwnerUsername(username);
+        //n.setUtentiCondivisi(destinatari);
+
+        ConcurrentMap<String,List<Note>> notesByOwner = DBManager.getNotesDatabase();
+        List<Note> list = notesByOwner.get(username);
+        if(list == null) {
+            list = new ArrayList<>();
+        } else {
+            list = new ArrayList<>(list);
+        }
+        list.add(n);
+        notesByOwner.put(username, list);
+
+        DBManager.getNoteById().put(id, n);
+
+        DBManager.getListaCondivisione().put(id, new ArrayList<>(destinatari));
+
+        DBManager.commit();
+
+                System.out.println("Nota creata da: " + username
+            + " con titolo: " + titolo
+            + " e stato: " + stato.name()
+            + " (ID=" + n.getId() + "), condivisa con: " + destinatari);
+
+        System.out.println("notesByOwner = " + DBManager.getNotesDatabase());
+        System.out.println("noteById = " + DBManager.getNoteById());
+        System.out.println("listaCondivisione = " + DBManager.getListaCondivisione());
+
+        
+
+        
+
+
+      
+
+/*
+        ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
+        ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
+
+
 
         Note nuovaNota = new Note(titolo, contenuto, stato, destinatari, username);
         nuovaNota.setOwnerUsername(username); 
@@ -187,7 +201,8 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
             + " con titolo: " + titolo
             + " e stato: " + stato.name()
             + " (ID=" + nuovaNota.getId() + "), condivisa con: " + valoriCondivisione);
-    }
+     */
+         }
     
 
     @Override
@@ -343,26 +358,22 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     @Override
     public List<Note> searchNotes(String query) throws NotingException {
-        HttpServletRequest request = this.getThreadLocalRequest();
-        HttpSession session = (request != null) ? request.getSession(false) : null;
+        User user = requireUser();
 
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        if (user == null) {
-            if (TEST_USER != null) {
-                user = TEST_USER; // modalità test, niente sessione
-            } else {
-                throw new NotingException("Utente di test non impostato. Impossibile cercare note.");
-            }
+        if(query == null || query.trim().isEmpty()) {
+            throw new NotingException("Query di ricerca mancante.");
         }
 
         List<Note> noteUtente = DBManager.getNotesDatabase().get(user.getUsername());
         if (noteUtente == null) return new ArrayList<>();
 
-        return noteUtente.stream()
-            .filter(n -> 
-                n.getTitle().toLowerCase().contains(query.toLowerCase()) ||
-                n.getContent().toLowerCase().contains(query.toLowerCase())
-            )
+         return noteUtente.stream()
+            .filter(n -> {
+                String t = n.getTitle() == null ? "" : n.getTitle();
+                String c = n.getContent() == null ? "" : n.getContent();
+                return t.toLowerCase().contains(query.toLowerCase()) ||
+                       c.toLowerCase().contains(query.toLowerCase());
+            })
             .collect(Collectors.toList());
     }
 
@@ -709,15 +720,20 @@ public Note getNotaById(int noteId) throws NotingException {
 
     User user = (session != null) ? (User) session.getAttribute("user") : null;
 
-    if (user == null) {
-        if (TEST_USER != null) {
-            // modalità test, utile in sviluppo/unit test
-            return TEST_USER;
-        } else {
-            throw new NotingException("Utente non autenticato.");
-        }
+    if (user != null) return user;
+
+    // Modalità test: comoda per unit/integration test senza servlet
+    if (TEST_USER != null) return TEST_USER;
+
+    throw new NotingException("Utente non autenticato.");
+    
     }
-    return user;
+
+    private void saveUserInSession(User user) {
+        HttpServletRequest req = this.getThreadLocalRequest();
+        if  (req == null) return;
+        HttpSession session = req.getSession(true);
+        if (session != null) session.setAttribute("user", user);
     }
 
 

@@ -4,5 +4,6 @@ package com.google.gwt.sample.noting.client;
 //di notificare il Controller (NotingApp) quando l’utente clicca
 public interface LogListener {
     void onLogin(String username, String password);
+    void onRegister(String username, String password);
 }
 

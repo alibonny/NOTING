@@ -9,12 +9,14 @@ import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
+
 
 public class HomeView extends Composite {
 
@@ -24,7 +26,6 @@ public class HomeView extends Composite {
     @UiField Label usernameLabel;
     @UiField Button logoutButton;
     @UiField Button createNoteButton;
-    /*@UiField VerticalPanel noteListPanel;*/
     @UiField TextBox searchBox;
     @UiField Button searchButton;
     
@@ -37,11 +38,10 @@ public class HomeView extends Composite {
     public HomeView(User user) {
         initWidget(uiBinder.createAndBindUi(this));
         usernameLabel.setText(user.getUsername());
-    this.user = user;                     // <-- fondamentale
-    usernameLabel.setText(
-        (this.user!=null && this.user.getUsername()!=null) ? this.user.getUsername() : "(utente)"
-    );
-  }
+        this.user = user;                    
+        usernameLabel.setText(
+        (this.user!=null && this.user.getUsername()!=null) ? this.user.getUsername() : "(utente)");
+    }
     
     
     public void setHomeViewListener(HomeViewListener listener) {
@@ -71,14 +71,14 @@ public class HomeView extends Composite {
             Label titleLabel = new Label(note.getTitle());
             noteWidget.add(titleLabel);
 
-                    // 4. Aggiungiamo il gestore del click all'intero widget
+            // 4. Aggiungiamo il gestore del click all'intero widget
             noteWidget.addDomHandler(e -> {
             String u = (this.user != null ? this.user.getUsername() : "NULL_USER");
-            GWT.log("[CLICK] user=" + u + ", note=" + (note!=null?note.getTitle():"NULL_NOTE"));
+            //GWT.log("[CLICK] user=" + u + ", note=" + (note!=null?note.getTitle():"NULL_NOTE"));
             if (listener != null && this.user != null) {
                 listener.onNoteSelected(note, this.user);
             } else {
-                com.google.gwt.user.client.Window.alert("USER NULL: rifai login");
+                Window.alert("USER NULL: rifai login");
             }
         }, ClickEvent.getType());
 
@@ -87,20 +87,7 @@ public class HomeView extends Composite {
             noteListPanel.add(noteWidget);
         }
     }
-    /* 
-    public void setNotes(List<Note> notes) {
-        noteListPanel.clear();
-        for (Note note : notes) {
-            Button noteButton = new Button(note.getTitle());
-            noteButton.addClickHandler(e -> {
-                if (listener != null) {
-                    listener.onNoteSelected(note);
-                }
-            });
-            noteListPanel.add(noteButton);
-        }
-    }
-    */
+  
     @UiHandler("logoutButton")
     void onLogoutClick(ClickEvent e) {
         if (listener != null) {
@@ -121,7 +108,7 @@ public class HomeView extends Composite {
             listener.onSearch(searchBox.getText());
         }
     }
-
+    
     @UiHandler("myNotes")
     void onMyNotesClick(ClickEvent e) {
         if (listener != null) {
@@ -129,7 +116,6 @@ public class HomeView extends Composite {
         }
 
     }
-
 
     @UiHandler("condiviseConMe")
     void onCondiviseConMeClick(ClickEvent e) {

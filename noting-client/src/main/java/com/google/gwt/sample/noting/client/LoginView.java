@@ -1,13 +1,8 @@
 package com.google.gwt.sample.noting.client;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.sample.noting.shared.NoteService;
-import com.google.gwt.sample.noting.shared.NoteServiceAsync;
-import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.PasswordTextBox;
@@ -31,7 +26,6 @@ public class LoginView extends Composite {
     @UiField
     Button registerButton;
 
-    private final NoteServiceAsync noteService = GWT.create(NoteService.class);
     private LogListener logListener;
 
     public void setLogListener(LogListener listener) {
@@ -62,18 +56,15 @@ public class LoginView extends Composite {
       }
     });
 
-
-        registerButton.addClickHandler(event -> {
-            noteService.register(getUsername(), getPassword(), new AsyncCallback<User>() {
-                public void onFailure(Throwable caught) {
-                    Window.alert("Errore di registrazione: " + caught.getMessage());
-                }
-
-                public void onSuccess(User result) {
-                    Window.alert("Registrazione completata! Ora puoi effettuare il login.");
-                }
-            });
+    registerButton.addClickHandler(event -> {
+        String username = usernameBox.getText();
+        String password = passwordBox.getText();
+        
+        if(logListener != null){
+        logListener.onRegister(username, password);
+        }      
         });
+     
     }
 
     private String getUsername() {
