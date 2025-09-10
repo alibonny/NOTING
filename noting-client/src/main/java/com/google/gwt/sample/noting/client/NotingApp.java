@@ -221,7 +221,7 @@ public class NotingApp implements EntryPoint {
         RootPanel.get().add(createNoteView);
     }
 
- private void loadVisualizzaNota(Note nota, User user) {
+     private void loadVisualizzaNota(Note nota, User user) {
     GWT.log("[DBG] entro in loadVisualizzaNota con user=" 
     + (user != null ? user.getUsername() : "NULL")
     + ", note=" + (nota != null ? nota.getTitle() : "NULL"));

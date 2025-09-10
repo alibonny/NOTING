@@ -212,17 +212,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     @Override
     public List<Note> getNoteUtente() throws NotingException {
-        HttpServletRequest request = this.getThreadLocalRequest();
-        HttpSession session = (request != null) ? request.getSession(false) : null;
-
-        User user = (session != null) ? (User) session.getAttribute("user") : null;
-        if (user == null) {
-            if (TEST_USER != null) {
-                user = TEST_USER; // modalità test
-            } else {
-                throw new NotingException("Utente di test non impostato. Impossibile recuperare le note.");
-            }
-        }
+       User user = requireUser();
 
         String username = user.getUsername();
         ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
@@ -512,12 +502,9 @@ public Note getNotaById(int noteId) throws NotingException {
 
     @Override
     public List<Note> getCondiviseConMe() throws NotingException {
-        HttpSession session = getThreadLocalRequest().getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
-            throw new NotingException("Utente non autenticato.");
-        }
+        User user = requireUser();
 
-        String username = ((User) session.getAttribute("user")).getUsername();
+        String username = user.getUsername();
 
         ConcurrentMap<Integer, List<String>> listaCondivisione = DBManager.getListaCondivisione();
         Map<Integer, Note> noteById = DBManager.getNoteById(); // Usa la mappa globale per ID
@@ -534,7 +521,7 @@ public Note getNotaById(int noteId) throws NotingException {
                 if (sharedWith != null && sharedWith.contains(username)) {
                     Note note = noteById.get(noteId); // Recupera la nota specifica tramite il suo ID
 
-                    // Aggiungi la nota alla lista dei risultati se esiste e non è dell'utente stesso
+                    // Aggiunge la nota alla lista dei risultati se esiste e non è dell'utente stesso
                     if (note != null && !note.getOwnerUsername().equals(username)) {
                         result.add(note);
                     }

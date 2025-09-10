@@ -44,7 +44,6 @@ public class VisualizzaNotaView extends Composite {
 
     private VisualizzaNotaViewListener listener;
     private Note nota; //così salviamo la nota corrente
-    protected Note.Stato stato;
     private User user; // per tenere traccia dello stato della nota
 
     public VisualizzaNotaView(Note nota, User user) {
@@ -53,29 +52,66 @@ public class VisualizzaNotaView extends Composite {
     this.user = user;
 
     // Imposta i valori iniziali dei campi
-    setUpIinitialUi();
+    setUpInitialUi();
 
    
 
     }
 
-    private void setUpIinitialUi() {
+    private boolean isOwner() {
+        return nota != null && user != null &&
+            nota.getOwnerUsername() != null &&
+            nota.getOwnerUsername().equals(user.getUsername());
+    }
+
+    private boolean isSharedState() {
+        return nota != null && (nota.getStato() == Note.Stato.Condivisa ||
+                                nota.getStato() == Note.Stato.CondivisaSCR);
+    }
+
+    private boolean canEdit() {
+        return isOwner() || (nota != null && nota.getStato() == Note.Stato.CondivisaSCR);
+    }
+
+    private void updateShareSectionVisibility() {
+        boolean visible = isOwner() && isSharedState();
+        shareSection.setVisible(visible);
+        if (visible) renderCondivisioni(); else sharedUsersPanel.clear();
+    }
+
+    private void applyReadOnly(){
+         titoloBox.setReadOnly(true);
+        contenutoArea.setReadOnly(true);
+        statoBox.setEnabled(false);
+        salvaButton.setVisible(false);
+        salvaButton.setEnabled(true);
+        modificaButton.setEnabled(true);
+    }
+    private void applyEdit(boolean owner) {
+    titoloBox.setReadOnly(false);
+    contenutoArea.setReadOnly(false);
+    statoBox.setEnabled(owner);
+    salvaButton.setVisible(true);
+    modificaButton.setEnabled(true);
+    }
+
+
+    private void setUpInitialUi() {
     String titolo = (nota != null && nota.getTitle() != null) ? nota.getTitle() : "";
     String contenuto = (nota != null && nota.getContent() != null) ? nota.getContent() : "";
     titoloBox.setText(titolo);
     contenutoArea.setText(contenuto);
-    titoloBox.setReadOnly(true);
-    contenutoArea.setReadOnly(true);
+    
+    // modalità iniziale : solo lettura
+    applyReadOnly();
 
-    salvaButton.setVisible(false); // nasconde il pulsante "Salva" inizialmente
 
     statoBox.clear();
     for (Note.Stato s : Note.Stato.values()) {
-        statoBox.addItem(s.name());
+        statoBox.addItem(s.name(),s.name());
     }
     Note.Stato stato = (nota != null) ? nota.getStato() : null;
     if (stato != null) {
-        // selezione robusta per value
         for (int i = 0; i < statoBox.getItemCount(); i++) {
             if (stato.name().equals(statoBox.getValue(i))) {
                 statoBox.setSelectedIndex(i);
@@ -85,43 +121,21 @@ public class VisualizzaNotaView extends Composite {
     } else if (statoBox.getItemCount() > 0) {
         statoBox.setSelectedIndex(0);
     }
-    statoBox.setEnabled(false); // disabilita la modifica inizialmente
 
+        // Permessi
+    modificaButton.setEnabled(canEdit());
 
-    // Gestione della sezione di condivisione e modifica
-    String owner = nota.getOwnerUsername();
-    String  utente = (user != null) ? user.getUsername() : null;
+    // Annulla condivisione: visibile solo se NON sei owner
+    annullaCondivisione.setVisible(!isOwner());
 
-    boolean enableModifica =
-        owner.equals(utente) || (nota.getStato() == Note.Stato.CondivisaSCR);
-    modificaButton.setEnabled(enableModifica);
+    // Sezione condivisione: visibile solo se owner + stato condiviso
+    updateShareSectionVisibility();
 
-    
-    if (owner != null && owner.equals(utente)) {
-    // stesso utente → nascondi il pulsante
-    annullaCondivisione.setVisible(false);
-    GWT.log("Pulsante nascosto (owner == user)");
-    } else {
-    // utenti diversi → mostra il pulsante
-    annullaCondivisione.setVisible(true);
-    GWT.log("Pulsante visibile (owner != user)");
-    }
-
-    
-    if((nota.getStato() == Note.Stato.Condivisa || nota.getStato() == Note.Stato.CondivisaSCR)
-     && nota.getOwnerUsername().equals(utente)) {
-        shareSection.setVisible(true);
-        renderCondivisioni();
-     
-        }else {
-        shareSection.setVisible(false);
-        sharedUsersPanel.clear();
-        }
-
-         cercaUtenteDaAggiungere.setVisible(false);
-        confermaUtenteDaAggiungere.setVisible(false);
-
-    }
+    // UI “aggiungi utente” nascosta di default
+    cercaUtenteDaAggiungere.setVisible(false);
+    confermaUtenteDaAggiungere.setVisible(false);
+    confermaUtenteDaAggiungere.setEnabled(true);
+     }
 
     public void setVisualizzaNotaViewListener(VisualizzaNotaViewListener listener) {
         this.listener = listener;
@@ -138,18 +152,20 @@ public class VisualizzaNotaView extends Composite {
     }
 
     @UiHandler("confermaUtenteDaAggiungere")
-void onConfermaUtenteDaAggiungereClick(ClickEvent e) {
-    String username = cercaUtenteDaAggiungere.getText().trim();
-    if (username.isEmpty()) {
-        Window.alert("Inserisci uno username.");
+    void onConfermaUtenteDaAggiungereClick(ClickEvent e) {
+     String username = (cercaUtenteDaAggiungere.getText() != null)
+            ? cercaUtenteDaAggiungere.getText().trim() : "";   
+    if(username.isEmpty()){
+         Window.alert("Inserisci uno username.");
         return;
     }
-    aggiuntiUtenteListaCondivisa(username);
-}
+    aggiungiUtenteListaCondivisa(username);
+    }
 
 
-    private void aggiuntiUtenteListaCondivisa(final String usernameDaAggiungere) {
-    if (listener == null) return;
+
+    private void aggiungiUtenteListaCondivisa(final String usernameDaAggiungere) {
+    if (listener == null || nota == null) return;
 
    confermaUtenteDaAggiungere.setEnabled(false);
 
@@ -157,21 +173,20 @@ void onConfermaUtenteDaAggiungereClick(ClickEvent e) {
         @Override public void onSuccess(Boolean exist) {
             if (!Boolean.TRUE.equals(exist)) {
                 Window.alert("Utente non trovato");
-                confermaUtenteDaAggiungere.setEnabled(false);
+                confermaUtenteDaAggiungere.setEnabled(true);
                 return;
             }
-            // chiediamo al server di aggiungere davvero userNorm tra i condivisi della nota notaId
+
             listener.aggiungiCondivisione(nota.getId(), usernameDaAggiungere, new AsyncCallback<Note>() {
                 @Override public void onSuccess(Note fresh) {
                     nota = fresh;
-                    shareSection.setVisible(true);
-                    renderCondivisioni();
+                    updateShareSectionVisibility();
                     Window.alert("Utente " + usernameDaAggiungere + " aggiunto con successo!\nRICORDA DI SALVARE PRIMA DI TORNARE ALLA HOME");
                     cercaUtenteDaAggiungere.setText("");
                     cercaUtenteDaAggiungere.setVisible(false);
                     confermaUtenteDaAggiungere.setVisible(false);
                     confermaUtenteDaAggiungere.setEnabled(true);
-                    salvaButton.setVisible(true);
+                    salvaButton.setVisible(true); // serve salvare
                 }
                 @Override public void onFailure(Throwable caught) {
                     Window.alert("Errore nel salvataggio della condivisione: " + caught.getMessage());
@@ -189,56 +204,36 @@ void onConfermaUtenteDaAggiungereClick(ClickEvent e) {
 
     @UiHandler("modificaButton")
     void onModificaClick(ClickEvent e) {
-
-
-     Note.Stato stato = (nota != null) ? nota.getStato() : null;
-    String owner = (nota != null) ? nota.getOwnerUsername() : null;
-    String utente = (user != null) ? user.getUsername() : null;
-    boolean isOwner = owner != null && owner.equals(utente);
-
-    // Non owner e non CondivisaSCR: il bottone dovrebbe essere disabilitato, ma mettiamo guardia
-    if (!isOwner && stato != Note.Stato.CondivisaSCR) {
+    if (!canEdit()) {
         Window.alert("Non hai i permessi per modificare questa nota.");
         return;
     }
     if (listener != null && nota != null) {
-        // opzionale: disabilita il bottone durante la richiesta
         modificaButton.setEnabled(false);
         listener.onRichiediLock(nota.getId());
-    }
+     }
     }
 
-        // Chiamato da NotingApp quando il lock è stato CONFERMATO dal server
     public void enableEditing(boolean isOwner) {
-        titoloBox.setReadOnly(false);
-        contenutoArea.setReadOnly(false);
-        if (isOwner) {
-            statoBox.setEnabled(true);
-        }
-        salvaButton.setVisible(true);
-        modificaButton.setEnabled(true); // riabilita il bottone
+        applyEdit(isOwner);
     }
 
     // Chiamato da NotingApp quando il lock è NEGATO o perso
     public void disableEditingWithMessage(String message) {
-        // ripristina stato "solo lettura"
-        titoloBox.setReadOnly(true);
-        contenutoArea.setReadOnly(true);
-        statoBox.setEnabled(false);
-        salvaButton.setVisible(false);
-        modificaButton.setEnabled(true); // riabilita per eventuale retry
+        applyReadOnly();
         if (message != null && !message.isEmpty()) {
             Window.alert(message);
         }
     }
         
-    
 
 @UiHandler("salvaButton")
 void onSalvaClick(ClickEvent e) {
     // UI → model
     String selectedValue = statoBox.getSelectedValue();
-    if (selectedValue == null) selectedValue = statoBox.getItemText(statoBox.getSelectedIndex());
+    if (selectedValue == null && statoBox.getSelectedIndex() >= 0) {
+        selectedValue = statoBox.getItemText(statoBox.getSelectedIndex());
+    }
 
     nota.setTitle(titoloBox.getText());
     nota.setContent(contenutoArea.getText());
@@ -246,18 +241,11 @@ void onSalvaClick(ClickEvent e) {
         nota.setStato(Note.Stato.valueOf(selectedValue));
     }
 
-    // Chiudi edit lato UI
-    titoloBox.setReadOnly(true);
-    contenutoArea.setReadOnly(true);
-    statoBox.setEnabled(false);
-    salvaButton.setVisible(false);
-    salvaButton.setEnabled(false); // evita doppi click
+    applyReadOnly();
+    salvaButton.setEnabled(false);
 
     if (listener != null) {
-        // invia salvataggio
         listener.onSalvaNota(nota);
-
-        // ricarica la nota fresca dal server e allinea la UI
         listener.getNotaById(nota.getId(), new AsyncCallback<Note>() {
             @Override
             public void onSuccess(Note fresh) {
@@ -272,17 +260,7 @@ void onSalvaClick(ClickEvent e) {
                     }
                 }
 
-                // mostra/nascondi sezione condivisione e ridisegna
-                boolean isOwner  = user != null && nota.getOwnerUsername().equals(user.getUsername());
-                boolean isShared = (nota.getStato() == Note.Stato.Condivisa || nota.getStato() == Note.Stato.CondivisaSCR);
-                shareSection.setVisible(isOwner && isShared);
-                if (shareSection.isVisible()) {
-                    renderCondivisioni();
-                } else {
-                    sharedUsersPanel.clear();
-                }
-
-                // messaggio finale
+                updateShareSectionVisibility();
                 Window.alert("Nota salvata con successo!\nTitolo: " + nota.getTitle()
                              + "\nStato: " + nota.getStato().name());
                 salvaButton.setEnabled(true);
@@ -290,13 +268,9 @@ void onSalvaClick(ClickEvent e) {
 
             @Override
             public void onFailure(Throwable caught) {
-                // in caso di errore, riapri l’editing per non perdere il lavoro
-                titoloBox.setReadOnly(false);
-                contenutoArea.setReadOnly(false);
-                statoBox.setEnabled(true);
-                salvaButton.setVisible(true);
-                salvaButton.setEnabled(true);
+                applyEdit(isOwner());
                 Window.alert("Errore nel recupero della nota aggiornata: " + caught.getMessage());
+                salvaButton.setEnabled(true);
             }
         });
     }
@@ -340,26 +314,14 @@ void onSalvaClick(ClickEvent e) {
     boolean confirm = Window.confirm("Rimuovere l'utente " + username + " dalla condivisione?");
     if (!confirm || listener == null) return;
 
-    // (opzionale) disabilita la UI del pannello per evitare doppi click
-    // es.: removeButton.setEnabled(false); se tieni un riferimento
-
+    
     listener.onRimuoviUtenteCondivisione(n, username, new AsyncCallback<Note>() {
         @Override public void onSuccess(Note fresh) {
             nota = fresh;
-            // Se non è più condivisa o non sei owner, nascondi la sezione
-            boolean isOwner  = nota.getOwnerUsername().equals(user.getUsername());
-            boolean isShared = (nota.getStato() == Note.Stato.Condivisa || nota.getStato() == Note.Stato.CondivisaSCR);
-            shareSection.setVisible(isOwner && isShared);
-
-            if (shareSection.isVisible()) {
-                renderCondivisioni();              // <<-- ridisegna la lista
-            } else {
-                sharedUsersPanel.clear();
-            }
+            updateShareSectionVisibility();
         }
         @Override public void onFailure(Throwable caught) {
             Window.alert("Errore nella rimozione: " + caught.getMessage());
-            // (opzionale) riabilita pulsante X se l’avevi disabilitato
         }
     });
 }
@@ -386,6 +348,4 @@ void onSalvaClick(ClickEvent e) {
 
 
    
-
-
 }
