@@ -68,17 +68,16 @@ public class DBManager implements ServletContextListener {
     // --- API per Test ---
 
     /** Apre un file DB dedicato ai test (diverso dal runtime). */
-    public static void openForTests(Path filePath) {
-        closeForTests(); // chiude eventuale DB precedente
-        db = DBMaker
-                .fileDB(filePath.toFile())
-                .transactionEnable()
-                .closeOnJvmShutdown()
-                .make();
+   public static void openForTests(Path ignored) {
+    closeForTests();
+    db = DBMaker
+            .memoryDB()            // <<--- IN MEMORIA
+            .transactionEnable()
+            .make();
+    initMapsAndIndexes();
+    ensureIdSequenceAligned();
+}
 
-        initMapsAndIndexes();
-        ensureIdSequenceAligned();
-    }
 
     /** Pulisce completamente i dati tra un test e l'altro. */
     public static void resetForTests() {

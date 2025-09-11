@@ -1,10 +1,8 @@
 package com.google.gwt.sample.noting.server;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -51,6 +49,14 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         User u = auth.register(username, password);
         saveUserInSession(u);
         return u;
+    }
+
+    @Override
+    public void logout() {
+        HttpServletRequest request = this.getThreadLocalRequest();
+        if (request == null) return;
+        HttpSession session = request.getSession(false);
+        if (session != null) session.invalidate();
     }
 
 
@@ -209,13 +215,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
 
 
-    @Override
-    public void logout() {
-        HttpServletRequest request = this.getThreadLocalRequest();
-        if (request == null) return;
-        HttpSession session = request.getSession(false);
-        if (session != null) session.invalidate();
-    }
+    
     
 
 

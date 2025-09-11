@@ -29,23 +29,24 @@ public class AuthServiceCoreImpl implements AuthServiceCore {
         throw new NotingException("Credenziali non valide");
     }
 
-        @Override
+    @Override
     public User register(String username, String password) throws NotingException {
         if (username == null || username.trim().isEmpty() || password == null || password.isEmpty()) {
             throw new NotingException("Username e password non possono essere vuoti.");
         }
 
+        String u = username.trim();
         ConcurrentMap<String, String> users = DBManager.getUsersDatabase();
             
         if (users.putIfAbsent(username.trim(), password) == null) {
             DBManager.commit();
-             User user = new User(username);
-
-            return user;
+            return new User(u);
+          
             } 
         throw new NotingException("Username già esistente.");
     
     }
+
 
     
  
