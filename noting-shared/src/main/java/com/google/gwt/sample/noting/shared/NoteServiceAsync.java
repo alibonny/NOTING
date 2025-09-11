@@ -46,7 +46,7 @@ public interface NoteServiceAsync {
     void creaCopiaNota(String username, int notaId, AsyncCallback<Void> arg3);
     void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String> utentiCondivisi, AsyncCallback<Void> arg5);
     void eliminaNota(String username, int notaId, AsyncCallback<Void> arg3);
-    void eliminaUltimaNota(AsyncCallback<Void> arg1);
+   // void eliminaUltimaNota(AsyncCallback<Void> arg1);
     void getAllUsernames(AsyncCallback<List<String>> arg1);
     void getCondiviseConMe(AsyncCallback<List<Note>> arg1);
     void getLockStatus(int noteId, AsyncCallback<LockStatus> arg2);

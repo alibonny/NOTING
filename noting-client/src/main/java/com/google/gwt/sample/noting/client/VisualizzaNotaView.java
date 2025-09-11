@@ -80,7 +80,7 @@ public class VisualizzaNotaView extends Composite {
     }
 
     private void applyReadOnly(){
-         titoloBox.setReadOnly(true);
+        titoloBox.setReadOnly(true);
         contenutoArea.setReadOnly(true);
         statoBox.setEnabled(false);
         salvaButton.setVisible(false);

@@ -27,7 +27,7 @@ public class DBManager implements ServletContextListener {
     private static ConcurrentMap<String, String> usersDatabase;              // username -> password
     private static ConcurrentMap<String, List<Note>> notesDatabase;          // ownerUsername -> note dell'owner
     private static ConcurrentMap<Integer, List<String>> listaCondivisione;   // noteId -> destinatari
-    private static ConcurrentMap<Integer, Note> noteById;                    // noteId -> nota
+    private static ConcurrentMap<Integer, Note> noteById;       
 
     // Sequenza ID atomica (sostituisce Var<Integer>)
     private static org.mapdb.Atomic.Long noteIdSeq;
