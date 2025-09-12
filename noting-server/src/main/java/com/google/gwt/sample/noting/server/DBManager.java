@@ -3,8 +3,10 @@ package com.google.gwt.sample.noting.server;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.ServletContextEvent;
@@ -16,41 +18,135 @@ import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
 
 import com.google.gwt.sample.noting.shared.Note;
-import com.google.gwt.sample.noting.shared.NoteHistory;
-
+import com.google.gwt.sample.noting.shared.NoteMemento;
 
 @WebListener
 public class DBManager implements ServletContextListener {
 
     // --- Stato e componenti base ---
     private static DB db;
-    //utente registrati con username e password
-    private static ConcurrentMap<String, String> usersDatabase;
-    // tutte le note create da ciascuno utente, dove memorizza le note per owner
-    private static ConcurrentMap<String, List<Note>> notesDatabase; // Mappa per le note
-    // lista di username a cui è condivisa una nota, dice a chi + condivisa ogni nota per id
-    private static ConcurrentMap<Integer, List<String>> listaCondivisione; // Mappa per le note condivise
-    // contatore per gli ID delle note
-    private static Atomic.Var<Integer> noteIdCounter;
-    // undice idNota -> Nota, è un indice veloce per recuperare una nota dall'ID
-    private static ConcurrentMap<Integer,Note> noteById;
 
-    private static ConcurrentMap<Integer, NoteHistory> noteHistoryDatabase;
+    // Dati applicativi
+    private static ConcurrentMap<String, String> usersDatabase;              // username -> password
+    private static ConcurrentMap<String, List<Note>> notesDatabase;          // ownerUsername -> note dell'owner
+    private static ConcurrentMap<Integer, List<String>> listaCondivisione;   // noteId -> destinatari
+    private static ConcurrentMap<Integer, Note> noteById;       
 
-    private static void initMaps() {
-        // Crea/riapre tutte le strutture
-        usersDatabase = db.hashMap("users", Serializer.STRING, Serializer.STRING).createOrOpen();
-        notesDatabase = db.hashMap("notes", Serializer.STRING, Serializer.JAVA).createOrOpen();
-        listaCondivisione = db.hashMap("listaCondivisione", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
-        noteById = db.hashMap("noteById", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
-        noteHistoryDatabase = db.hashMap("noteHistory", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
+    private static final ConcurrentMap<Integer, LinkedList<NoteMemento>> noteHistoryDatabase = new ConcurrentHashMap<>();
 
-        noteIdCounter = db.atomicVar("noteIdCounter", Serializer.INTEGER).createOrOpen();
-        if (noteIdCounter.get() == null) {
-            noteIdCounter.set(1);
+    // Sequenza ID atomica (sostituisce Var<Integer>)
+    private static org.mapdb.Atomic.Long noteIdSeq;
+
+    // --- Lifecycle Servlet ---
+
+    public static void saveNoteMemento(int noteId, Note nota) {
+        if (nota == null) return;
+        LinkedList<NoteMemento> history = noteHistoryDatabase.computeIfAbsent(noteId, k -> new LinkedList<>());
+        // Limita la cronologia a max 3 versioni
+        if (history.size() >= 3) history.removeFirst();
+        history.addLast(new NoteMemento(nota.getTitle(), nota.getContent(), new java.util.Date()));
+    }
+
+    public static List<NoteMemento> getNoteHistory(int noteId) {
+        LinkedList<NoteMemento> history = noteHistoryDatabase.get(noteId);
+        return history != null ? new LinkedList<>(history) : new LinkedList<>();
+    }
+
+    public static NoteMemento getNoteHistoryEntry(int noteId, int historyIndex) {
+        LinkedList<NoteMemento> history = noteHistoryDatabase.get(noteId);
+        if (history == null || historyIndex < 0 || historyIndex >= history.size()) return null;
+        return history.get(historyIndex);
+    }
+
+    public static Note restoreNoteFromMemento(int noteId, NoteMemento memento) {
+        // Cerca la nota e aggiorna titolo/contenuto
+        for (List<Note> notes : getNotesDatabase().values()) {
+            for (Note n : notes) {
+                if (n.getId() == noteId) {
+                    n.setTitle(memento.getTitle());
+                    n.setContent(memento.getContent());
+                    return n;
+                }
+            }
+        }
+        return null;
+    }
+    
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        System.out.println("[DB] Inizializzazione MapDB (file)...");
+        final String dbPath = sce.getServletContext().getRealPath("/WEB-INF/noting-v3.db");
+        final File dbFile = new File(dbPath);
+        dbFile.getParentFile().mkdirs();
+
+        db = DBMaker
+                .fileDB(dbFile)
+                .transactionEnable()
+                .closeOnJvmShutdown()
+                .make();
+
+        initMapsAndIndexes();
+        ensureIdSequenceAligned();
+
+        if (usersDatabase.isEmpty()) {
+            usersDatabase.put("test", "test");
+            db.commit();
+            System.out.println("[DB] Utente di default 'test' creato.");
         }
 
-        // riallineo indice se vuoto ma ci sono note
+        System.out.println("[DB] Database inizializzato con successo.");
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {
+        safeClose();
+        System.out.println("[DB] Database MapDB chiuso correttamente.");
+    }
+
+    // --- API per Test ---
+
+    /** Apre un file DB dedicato ai test (diverso dal runtime). */
+   public static void openForTests(Path ignored) {
+    closeForTests();
+    db = DBMaker
+            .memoryDB()            // <<--- IN MEMORIA
+            .transactionEnable()
+            .make();
+    initMapsAndIndexes();
+    ensureIdSequenceAligned();
+}
+
+
+    /** Pulisce completamente i dati tra un test e l'altro. */
+    public static void resetForTests() {
+        ensureReady();
+        usersDatabase.clear();
+        notesDatabase.clear();
+        listaCondivisione.clear();
+        noteById.clear();
+        noteIdSeq.set(1L); // riparte da 1
+        db.commit();
+    }
+
+    /** Chiude il DB e azzera i riferimenti (fine test). */
+    public static void closeForTests() {
+        safeClose();
+        clearRefs();
+    }
+
+    // --- Inizializzazione Strutture ---
+
+    /** Crea/riapre tutte le strutture e l'atomic long per gli ID. */
+    private static void initMapsAndIndexes() {
+        ensureDbOpen();
+
+        usersDatabase       = db.hashMap("users",             Serializer.STRING,  Serializer.STRING).createOrOpen();
+        notesDatabase       = db.hashMap("notes",             Serializer.STRING,  Serializer.JAVA  ).createOrOpen();
+        listaCondivisione   = db.hashMap("listaCondivisione", Serializer.INTEGER, Serializer.JAVA  ).createOrOpen();
+        noteById            = db.hashMap("noteById",          Serializer.INTEGER, Serializer.JAVA  ).createOrOpen();
+        noteIdSeq           = db.atomicLong("noteIdSeq").createOrOpen();
+
+        // Ricostruisci indice id->nota se mancante ma sono presenti note in notesDatabase
         if (noteById.isEmpty() && !notesDatabase.isEmpty()) {
             for (List<Note> list : notesDatabase.values()) {
                 if (list == null) continue;
@@ -61,91 +157,16 @@ public class DBManager implements ServletContextListener {
             db.commit();
         }
     }
-    private static void ensureOpenInMemory() {
-        if (db == null || db.isClosed()) {
-            db = DBMaker.memoryDB()
-                    .transactionEnable()
-                    .make();
+
+    /** Allinea la sequenza noteIdSeq al valore max(noteId)+1 per evitare collisioni dopo riavvio. */
+    private static void ensureIdSequenceAligned() {
+        int maxId = 0;
+
+        // 1) guarda l'indice primario
+        for (Integer id : noteById.keySet()) {
+            if (id != null && id > maxId) maxId = id;
         }
-    
-        if (usersDatabase == null || notesDatabase == null || listaCondivisione == null || noteById == null || noteIdCounter == null || noteHistoryDatabase == null) {
-            initMaps();
-        }
-    }
-
-    // Apri un DB MapDB su un file (diverso da quello “vero”) per i test
-    public static void openForTests(Path filePath) {
-        closeForTests(); // chiude eventuale DB precedente
-        db = DBMaker.fileDB(filePath.toFile())
-                .transactionEnable()
-                .closeOnJvmShutdown()
-                .make();
-        initMaps();
-    }
-
-    // Pulisci i dati tra un test e l'altro
-    public static void resetForTests() {
-        ensureOpenInMemory();
-        usersDatabase.clear();
-        notesDatabase.clear();
-        listaCondivisione.clear();
-        noteById.clear(); 
-        noteHistoryDatabase.clear(); 
-        noteIdCounter.set(1);
-        db.commit();
-    }
-
-    // Chiudi e azzera i riferimenti (fine test)
-    public static void closeForTests() {
-        try {
-            if (db != null && !db.isClosed()) db.close();
-        } catch (Exception ignore) {}
-        db = null;
-        usersDatabase = null;
-        notesDatabase = null;
-        listaCondivisione = null;
-        noteById = null;
-        noteIdCounter = null;
-        noteHistoryDatabase = null;
-    }
-
-    @Override
-    public void contextInitialized(ServletContextEvent sce) {
-        System.out.println("Inizializzazione del database MapDB...");
-        
-        String dbPath = sce.getServletContext().getRealPath("/WEB-INF/noting.db");
-        File dbFile = new File(dbPath);
-        dbFile.getParentFile().mkdirs();
-
-        db = DBMaker.fileDB(new File(dbPath))
-                    .transactionEnable()
-                    .closeOnJvmShutdown()
-                    .make();
-
-        initMaps(); // <--- usa questo, niente duplicati sotto
-
-        if (usersDatabase.isEmpty()) {
-            usersDatabase.put("test", "test");
-            db.commit();
-            System.out.println("Utente di default 'test' creato.");
-        }
-        System.out.println("Database inizializzato con successo.");
-    }
-
-                /* 
-    // Mappa degli utenti
-    usersDatabase = db.hashMap("users", Serializer.STRING, Serializer.STRING).createOrOpen();
-    
-    // Mappa delle note
-    notesDatabase = db.hashMap("notes", Serializer.STRING, Serializer.JAVA).createOrOpen();
-
-    listaCondivisione = db.hashMap("listaCondivisione", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
-
-    noteById = db.hashMap("noteById", Serializer.INTEGER, Serializer.JAVA).createOrOpen();
-
-    noteIdCounter = db.atomicVar("noteIdCounter", Serializer.INTEGER).createOrOpen();   
-    // --- riallinea indice se vuoto ma ci sono già note salvate ---
-    if (noteById.isEmpty() && !notesDatabase.isEmpty()) {
+        // 2) doppia safety: esplora anche notesDatabase
         for (List<Note> list : notesDatabase.values()) {
             if (list == null) continue;
             for (Note n : list) {
@@ -153,17 +174,10 @@ public class DBManager implements ServletContextListener {
             }
         }
 
-        */
-    //    db.commit();
-    // }
-    /* 
-        noteIdCounter = db.atomicVar("noteIdCounter", Serializer.INTEGER).createOrOpen();
-        if (noteIdCounter.get() == null) {
-        noteIdCounter.set(1);
-        }
-
-        if (usersDatabase.isEmpty()) {
-            usersDatabase.put("test", "test");
+        long current = noteIdSeq.get();
+        long target  = (long) maxId + 1L;
+        if (current < target) {
+            noteIdSeq.set(target);
             db.commit();
         }
     }
@@ -226,11 +240,17 @@ public class DBManager implements ServletContextListener {
         return noteById;
     }
 
-    public static ConcurrentMap<Integer, NoteHistory> getNoteHistoryDatabase() {
-        if (noteHistoryDatabase == null) ensureOpenInMemory();
-        return noteHistoryDatabase;
+    /** Prossimo ID nota (atomico). */
+    public static int nextNoteId() {
+        ensureReady();
+        long v = noteIdSeq.getAndIncrement();
+        if (v > Integer.MAX_VALUE) {
+            throw new IllegalStateException("Overflow ID note (long -> int).");
+        }
+        return (int) v;
     }
 
+    /** Commit esplicito della transazione MapDB. */
     public static void commit() {
         ensureDbOpen();
         db.commit();
@@ -261,15 +281,4 @@ public class DBManager implements ServletContextListener {
         }
         return shared;
     }
-
-
-
-
-
 }
-
-
-
-
-
-

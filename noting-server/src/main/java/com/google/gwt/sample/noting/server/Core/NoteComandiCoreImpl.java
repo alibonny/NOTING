@@ -21,8 +21,11 @@ public class NoteComandiCoreImpl implements NoteComandiCore {
         if (titolo == null || titolo.trim().isEmpty()) {
             throw new NotingException("Il titolo non può essere vuoto.");
         }
+         if (contenuto == null || contenuto.trim().isEmpty()) {
+            throw new NotingException("Il contenuto non può essere vuoto.");
+        }
         titolo = titolo.trim();
-        if (contenuto == null) contenuto = "";
+        contenuto = contenuto.trim();
         if (stato == null) stato = Note.Stato.Privata;
 
         // normalizza destinatari (no null, no vuoti, no owner, solo utenti esistenti)

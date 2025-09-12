@@ -13,7 +13,16 @@ public interface VisualizzaNotaViewListener {
     void onEliminaNota(Note nota);
     void onCreaUnaCopia(Note nota);
     void onAnnullaCondivisione(Note nota);
-    void onRimuoviUtenteCondivisione(Note nota, String username);
+    void onRimuoviUtenteCondivisione(Note nota, String username, AsyncCallback<Note> callback);
+
+    void onRichiediLock(int noteId);
+
+    void trovaUtente2(Note nota, String username, AsyncCallback<Boolean> callback);
+
+    void aggiungiCondivisione(int notaId, String username, AsyncCallback<Note> callback);
+
+    void getNotaById(int noteId, AsyncCallback<Note> callback);
+
     void onGetNoteHistory(int noteId, AsyncCallback<List<NoteMemento>> callback);
     void onRestoreNote(int noteId, int historyIndex, AsyncCallback<Note> callback);
 }

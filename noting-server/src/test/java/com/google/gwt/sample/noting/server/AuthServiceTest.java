@@ -1,4 +1,4 @@
-/*package com.google.gwt.sample.noting.server;
+package com.google.gwt.sample.noting.server;
 
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentMap;
@@ -95,6 +95,5 @@ public class AuthServiceTest {
         assertNotNull(u);
         assertEquals("eva", u.getUsername());
     }
-
-
-}*/
+    
+}

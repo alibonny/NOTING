@@ -85,21 +85,22 @@ public class NoteCreazioneTest {
     }
 
     @Test
-    void creaNota_con_diversi_input() throws Exception {
-        // contenuto null -> stringa vuota
-        service.creazioneNota("Note1", null, null, null);
-        Note n = DBManager.getNotesDatabase().get("tester").get(0);
-        assertEquals("", n.getContent());
-        assertEquals(Stato.Privata, n.getStato());
+void creaNota_contenutoNull_lanciaEccezione() {
+    assertThrows(NotingException.class,
+        () -> service.creazioneNota("Note1", null, null, null),
+        "Se il contenuto è null deve lanciare eccezione");
+}
 
-        // destinatari: duplicati, self-share, utente inesistente
-        service.creazioneNota("Note2", "c", Stato.Condivisa,
-                List.of("alice", " alice ", "tester", "nonEsiste"));
+@Test
+void creaNota_condivisione_filtraDuplicati_e_SelfShare() throws Exception {
+    service.creazioneNota("Note2", "c", Stato.Condivisa,
+            List.of("alice", " alice ", "tester", "nonEsiste"));
 
-        List<String> share = DBManager.getListaCondivisione()
-                                      .get(DBManager.getNoteById().size()); // ultima nota
-        assertEquals(List.of("alice"), share, "dev’essere solo alice una volta");
-    }
+    List<String> share = DBManager.getListaCondivisione()
+                                  .get(DBManager.getNoteById().size()); // ultima nota
+    assertEquals(List.of("alice"), share, "Dev’essere solo alice una volta");
+}
+
 
     @Test
     void creaNota_titolo_vuoto_throws() {

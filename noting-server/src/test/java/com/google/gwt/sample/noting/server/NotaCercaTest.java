@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,6 +42,11 @@ public class NotaCercaTest {
         NoteServiceImpl._clearTestUser();
         DBManager.closeForTests();
     }
+
+
+
+    // =============== TEST per searchNotes() ===============
+
 
         // 1) Query mancante
     @Test
@@ -91,13 +97,57 @@ public class NotaCercaTest {
 
     }
 
-       
 
 
-    
+    // =============== TEST per getNotaById() ===============
 
 
+    @Test
+    void getNotaById_returnsNoteDto_whenNoteExists() throws Exception {
+        NoteServiceImpl._setTestUser(new User("alice"));
 
+        var note = new Note("titolo", "contenuto", Note.Stato.Condivisa,
+                new ArrayList<>(List.of("bob", "charlie")), "alice");
+        note.setId(1);
 
+        DBManager.getNoteById().put(1, note);
+        DBManager.getUsersDatabase().put("alice", "pwd1");
+        DBManager.getUsersDatabase().put("bob", "pwd2");
+        DBManager.getUsersDatabase().put("charlie", "pwd3");
+        DBManager.getListaCondivisione().put(1, new ArrayList<>(List.of("bob", "charlie")));
+        DBManager.getNotesDatabase().put("alice", new ArrayList<>(Arrays.asList(note)));
+        DBManager.commit();
+
+        Note dto = service.getNotaById(1);
+
+        // DTO corretto
+        assertNotNull(dto);
+        assertEquals(1, dto.getId());
+        assertEquals("titolo", dto.getTitle());
+        assertEquals("contenuto", dto.getContent());
+        assertEquals(Note.Stato.Condivisa, dto.getStato());
+        assertEquals("alice", dto.getOwnerUsername());
+        assertTrue(dto.getUtentiCondivisi().contains("bob"));
+        assertTrue(dto.getUtentiCondivisi().contains("charlie"));
+
+        // Modifica DTO non deve impattare l'oggetto originale
+        dto.getUtentiCondivisi().add("INTRUSO");
+        Note original = DBManager.getNoteById().get(1);
+        assertFalse(original.getUtentiCondivisi().contains("INTRUSO"));
+        assertEquals(2, original.getUtentiCondivisi().size());
+    }
+
+    @Test
+    void getNotaById_throwsWhenNoteIdInvalid() {
+        NoteServiceImpl._setTestUser(new User("alice"));
+        assertThrows(NotingException.class, () -> service.getNotaById(0));
+        assertThrows(NotingException.class, () -> service.getNotaById(-5));
+    }
+
+    @Test
+    void getNotaById_throwsWhenNoteDoesNotExist() {
+        NoteServiceImpl._setTestUser(new User("alice"));
+        assertThrows(NotingException.class, () -> service.getNotaById(99));
+    }
     
 }
