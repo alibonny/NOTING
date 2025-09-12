@@ -1,5 +1,8 @@
 package com.google.gwt.sample.noting.client;
+import java.util.List;
+
 import com.google.gwt.sample.noting.shared.Note;
+import com.google.gwt.sample.noting.shared.NoteMemento;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public interface VisualizzaNotaViewListener {
@@ -20,5 +23,6 @@ public interface VisualizzaNotaViewListener {
 
     void getNotaById(int noteId, AsyncCallback<Note> callback);
 
-
+    void onGetNoteHistory(int noteId, AsyncCallback<List<NoteMemento>> callback);
+    void onRestoreNote(int noteId, int historyIndex, AsyncCallback<Note> callback);
 }
