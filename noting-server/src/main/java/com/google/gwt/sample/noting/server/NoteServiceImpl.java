@@ -37,14 +37,14 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
 
 
-    @Override 
+    @Override //TEST FATTO
     public User login(String username, String password) throws NotingException {
         User u = auth.login(username,password);
         saveUserInSession(u);
         return u;
     }
 
-    @Override
+    @Override //TEST FATTO
     public User register(String username, String password) throws NotingException {
         User u = auth.register(username, password);
         saveUserInSession(u);
@@ -129,13 +129,13 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     }
 
-        @Override
+        @Override //TEST FATTO
     public List<Note> getNoteUtente() throws NotingException {
         String owner = requireUser().getUsername();
         return cerca.getNotesOf(owner);
     }
 
-    @Override
+    @Override //TEST FATTO
     public Note getNotaById(int noteId) throws NotingException {
         // opzionale: qui potresti verificare che l’utente corrente sia owner
         // o che la nota sia condivisa con lui, se vuoi stringere i permessi.
@@ -143,49 +143,49 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         return cerca.getById(noteId);
     }
 
-    @Override
+    @Override //TEST FATTO
     public List<Note> searchNotes(String query) throws NotingException {
         String owner = requireUser().getUsername();
         return cerca.search(owner, query);
     }
 
-    @Override
+    @Override //TEST FATTO
     public List<Note> getCondiviseConMe() throws NotingException {
         String me = requireUser().getUsername();
         return cerca.sharedWith(me);
     }
 
-    @Override
+    @Override //TEST FATTO
     public void svuotaCondivisioneNota(int notaId) throws NotingException {
         String me = requireUser().getUsername();
         sharing.clearShareList(me, notaId);
     }
 
-    @Override
+    @Override //TEST FATTO
     public List<String> getAllUsernames() {
         return sharing.getAllUsernames();
     }
 
-    @Override
+    @Override //TEST FATTO
     public boolean cercaUtente(String username) throws NotingException {
         String me = requireUser().getUsername();
         return sharing.userExistsDifferentFrom(me, username);
     }
 
-    @Override
+    @Override //TEST FATTO
     public boolean cercaUtente2(Note nota, String username) throws NotingException {
         String me = requireUser().getUsername();
         return sharing.userExistsDifferentFrom(nota, me, username);
     }
 
-    @Override
+    @Override //TEST FATTO
     public Note aggiungiCondivisione(int noteId, String username) throws NotingException {
         String me = requireUser().getUsername();
         // opzionale: verifica lock se vuoi impedire cambi sharing durante editing altrui
         return sharing.addShare(me, noteId, username);
     }
 
-    @Override
+    @Override //TEST FATTO
     public void annullaCondivisione(String username, int notaId) throws NotingException {
         // sicurezza: il parametro deve coincidere con l’utente loggato
         String me = requireUser().getUsername();
@@ -193,7 +193,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         sharing.cancelShareForUser(me, notaId);
     }
 
-    @Override
+    @Override //TEST FATTO
     public void rimuoviUtenteCondivisione(int notaId, String username) throws NotingException {
         String me = requireUser().getUsername();
         sharing.removeUserFromShare(me, notaId, username);

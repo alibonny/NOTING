@@ -74,7 +74,7 @@ public class SharingCoreImpl implements SharingCore {
         }
         if (!lista.contains(targetUsername)) {
             lista.add(targetUsername);
-            // riflette sulla nota e sugli indici
+            shareMap.put(noteId, lista); // serve per rimettere la lista aggiornata in MapDB
             nota.setUtentiCondivisi(new ArrayList<>(lista));
             noteById.put(noteId, nota);
 
