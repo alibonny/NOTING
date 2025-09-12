@@ -5,7 +5,8 @@
     <g:HTMLPanel styleName="form-panel">
 
         <g:HTML ui:field="backLink" styleName="back-link">&lt; Torna alla Home</g:HTML>
-        
+    
+
         <g:TextBox ui:field="titoloBox" styleName="note-input"/>
         
         <g:TextArea ui:field="contenutoArea" styleName="note-textarea" />
@@ -18,9 +19,15 @@
             <g:Button ui:field="modificaButton" text="Modifica" styleName="bottoneLogin"/>
             <g:Button ui:field="salvaButton" text="Salva" styleName="bottoneLogin"/>
             <g:Button ui:field="eliminaButton" text="Elimina" styleName="bottoneLogin"/>
-            <g:Button ui:field="creaUnaCopia" text="CreaCopia" styleName="bottoneLogin"/>
-            <g:Button ui:field="annullaCondivisione" text="Annulla Condivisione" styleName="bottoneLogin"/>
+
+            <g:Button ui:field="historyButton" text="⟲" styleName="bottoneLogin"/>
+            <g:ListBox ui:field="historyBox" styleName="status" visible="false"/>
         </g:HorizontalPanel>
+
+
+        <g:Button ui:field="creaUnaCopia" text="CreaCopia" styleName="bottoneLogin"/>
+        <g:Button ui:field="annullaCondivisione" text="Annulla Condivisione"/>
+
 
         <!-- Contenitore SEZIONE CONDIVISIONE (nascosto di default) -->
         <g:HTMLPanel ui:field="shareSection" styleName="share-section hidden">

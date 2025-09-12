@@ -6,6 +6,7 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.sample.noting.shared.LockToken;
 import com.google.gwt.sample.noting.shared.Note;
+import com.google.gwt.sample.noting.shared.NoteMemento;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NoteServiceAsync;
 import com.google.gwt.sample.noting.shared.User;
@@ -329,82 +330,18 @@ public class NotingApp implements EntryPoint {
 
         }
 
-
         @Override
-        public void onRichiediLock(int noteId) {
-            service.tryAcquireLock(noteId, new AsyncCallback<LockToken>(){
-            @Override
-            public void onSuccess(LockToken token) {
-                boolean isOwner = loggedInUser.getUsername().equals(nota.getOwnerUsername());
-                view.enableEditing(isOwner);
-                startLockHeartbeat(noteId); // il timer che fa renew ogni 30s
-            }
-
-            @Override
-            public void onFailure(Throwable caught) {
-                view.disableEditingWithMessage("Nota già in modifica da un altro utente: " + caught.getMessage());
-                loadHomeView();
-            } 
-        });
-    }
-
-      
-         @Override
-        public void trovaUtente2(Note nota,String username, AsyncCallback<Boolean> callback) {
-                System.out.println("cerca utente" + username);
-
-                service.cercaUtente2(nota,username,new AsyncCallback<Boolean>() {
-                @Override
-                public void onSuccess(Boolean exists) {
-                    if (Boolean.TRUE.equals(exists)) {
-
-                        callback.onSuccess(true);
-                        // eventuale logica di condivisione, es: service.condividiNota(...)
-                    } else {
-                        callback.onSuccess(false);
-                    }
-                }
-                 @Override
-                 public void onFailure(Throwable caught) {
-                    Window.alert("Errore nella ricerca utente: " + caught.getMessage());
-                 }
-            });
+        public void onGetNoteHistory(int noteId, AsyncCallback<List<NoteMemento>> callback) {
+            service.getNoteHistory(noteId, callback);
         }
 
-
-            @Override
-            public void aggiungiCondivisione(int notaId, String username, AsyncCallback<Note> callback){
-                service.aggiungiCondivisione(notaId, username, new AsyncCallback<Note>() {
-            @Override
-            public void onSuccess(Note result) {
-                // inoltra al callback del caller
-                callback.onSuccess(result);
-            }
-
-            @Override
-            public void onFailure(Throwable caught) {
-                // inoltra al callback del caller
-                callback.onFailure(caught);
-            }
-                
-            });
+        @Override
+        public void onRestoreNote(int noteId, int historyIndex, AsyncCallback<Note> callback) {
+            service.restoreNoteFromHistory(noteId, historyIndex, callback);
+        }
         
-        }
-        @Override
-public void getNotaById(int noteId, AsyncCallback<Note> callback) {
-    service.getNotaById(noteId, callback);
-}
-
     });
-                
 
-       
-      
-            
-
-    
-        
-                
     RootPanel.get().clear();
     RootPanel.get().add(view);
 }

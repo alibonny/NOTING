@@ -43,6 +43,17 @@ public class Note implements Serializable {
         this.ownerUsername = ownerUsername;
     }
 
+    public NoteMemento createMemento() {
+        // Crea un "salvataggio" dello stato attuale (solo titolo e contenuto)
+        return new NoteMemento(this.title, this.content);
+    }
+
+    public void restore(NoteMemento memento) {
+        // Ripristina titolo e contenuto da un salvataggio precedente
+        this.title = memento.getTitle();
+        this.content = memento.getContent();
+    }
+
     public String getTitle() {
         return title;
     }

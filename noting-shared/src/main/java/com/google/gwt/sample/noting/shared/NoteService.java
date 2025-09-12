@@ -51,3 +51,8 @@ public interface NoteService extends RemoteService {
 
 
 
+
+
+    List<NoteMemento> getNoteHistory(int noteId) throws NotingException;
+    Note restoreNoteFromHistory(int noteId, int historyIndex) throws NotingException;
+}
