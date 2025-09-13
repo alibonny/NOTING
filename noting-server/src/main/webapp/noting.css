@@ -233,37 +233,3 @@ html, body{
     align-items: center;
     gap: 10px;
 }
-
-.note-tag {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    background-color: #f0f0f0;
-    padding: 2px 5px;
-    border-radius: 3px;
-    font-size: 0.8em;
-    color: #555;
-}
-
-.tag-panel {
-    margin: 10px 0;
-    align-items: center;
-}
-
-.hidden {
-    display: none;
-}
-
-.status {
-    width: 150px;
-}
-
-.note-input, .note-textarea {
-    width: 100%;
-    margin-bottom: 10px;
-}
-
-.button-panel {
-    margin: 10px 0;
-    align-items: center;
-}

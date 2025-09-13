@@ -1,6 +1,5 @@
 package com.google.gwt.sample.noting.server;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -22,7 +21,6 @@ import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteMemento;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NotingException;
-import com.google.gwt.sample.noting.shared.Tag;
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
@@ -61,13 +59,15 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         if (session != null) session.invalidate();
     }
 
+
     @Override
-    public void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String> utenti, List<String> tags)
+    public void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String> utenti)
         throws NotingException {
         String owner = requireUser().getUsername();
-        comandi.creazioneNota(owner, titolo, contenuto, stato, utenti, tags);
+        comandi.creazioneNota(owner, titolo, contenuto, stato, utenti);
     }
 
+    
     @Override
     public List<NoteMemento> getNoteHistory(int noteId) throws NotingException {
         requireUser();
@@ -151,43 +151,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
     }
 
-     
-    @Override
-    public List<String> getAllTags() throws NotingException {
-        requireUser();
-        return new ArrayList<>(DBManager.getTagsDatabase().keySet());
-    }
-    
-    @Override
-    public void addTagToNote(int noteId, String tagName) throws NotingException {
-        User user = requireUser();
-        ensureCanEdit(user, noteId);
-        DBManager.addTagToNote(noteId, tagName);
-    }
-    
-    @Override
-    public void removeTagFromNote(int noteId, String tagName) throws NotingException {
-        User user = requireUser();
-        ensureCanEdit(user, noteId);
-        DBManager.removeTagFromNote(noteId, tagName);
-    }
-    
-    @Override
-    public void createNewTag(String tagName) throws NotingException {
-        requireUser();
-        if (tagName == null || tagName.trim().isEmpty()) {
-            throw new NotingException("Il nome del tag non può essere vuoto");
-        }
-        
-        ConcurrentMap<String, Tag> tagsDB = DBManager.getTagsDatabase();
-        if (!tagsDB.containsKey(tagName)) {
-            tagsDB.put(tagName, new Tag(tagName));
-            DBManager.commit();
-        }
-    }
-
-
-    @Override //TEST FATTO
+        @Override //TEST FATTO
     public List<Note> getNoteUtente() throws NotingException {
         String owner = requireUser().getUsername();
         return cerca.getNotesOf(owner);
@@ -256,8 +220,6 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         String me = requireUser().getUsername();
         sharing.removeUserFromShare(me, notaId, username);
     }
-
-    
 
 
 

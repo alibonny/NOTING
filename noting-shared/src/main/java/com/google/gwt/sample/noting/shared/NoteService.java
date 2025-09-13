@@ -10,7 +10,7 @@ public interface NoteService extends RemoteService {
     User login(String username, String password) throws NotingException;
     User register(String username, String password) throws NotingException;
     void logout();
-    void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String>utentiCondivisi, List<String> tags) throws NotingException;
+    void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String>utentiCondivisi) throws NotingException;
   //  void eliminaUltimaNota();
     List<Note> getNoteUtente() throws NotingException;
     void updateNota(Note notaModificata) throws NotingException;
@@ -48,11 +48,6 @@ public interface NoteService extends RemoteService {
 
     List<NoteMemento> getNoteHistory(int noteId) throws NotingException;
     Note restoreNoteFromHistory(int noteId, int historyIndex) throws NotingException;
-
-    List<String> getAllTags() throws NotingException;
-    void addTagToNote(int noteId, String tagName) throws NotingException;
-    void removeTagFromNote(int noteId, String tagName) throws NotingException;
-    void createNewTag(String tagName) throws NotingException;
 }
 
 

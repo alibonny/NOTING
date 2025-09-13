@@ -56,14 +56,7 @@ public class HomeView extends Composite {
             FlowPanel noteWidget = new FlowPanel();
             noteWidget.addStyleName("noteItem"); // Stile generico del post-it
 
-            // 2. Aggiungiamo il tag se presente
-            if (note.getTags() != null && !note.getTags().isEmpty()) {
-                Label tagLabel = new Label(note.getTags().get(0)); // Mostra solo il primo tag
-                tagLabel.addStyleName("note-tag");
-                noteWidget.add(tagLabel);
-            }
-
-            // 3. Aggiungiamo lo stile specifico per l'immagine di sfondo
+            // 2. Aggiungiamo lo stile specifico per l'immagine di sfondo
             switch (note.getStato()) {
                 case Privata:
                     noteWidget.addStyleName("nota-privata-img");
@@ -74,11 +67,11 @@ public class HomeView extends Composite {
                     break;
             }
 
-            // 4. Aggiungiamo il titolo della nota
+            // 3. Aggiungiamo il titolo della nota
             Label titleLabel = new Label(note.getTitle());
             noteWidget.add(titleLabel);
 
-            // 5. Aggiungiamo il gestore del click all'intero widget
+            // 4. Aggiungiamo il gestore del click all'intero widget
             noteWidget.addDomHandler(e -> {
             String u = (this.user != null ? this.user.getUsername() : "NULL_USER");
             //GWT.log("[CLICK] user=" + u + ", note=" + (note!=null?note.getTitle():"NULL_NOTE"));
@@ -90,7 +83,7 @@ public class HomeView extends Composite {
         }, ClickEvent.getType());
 
 
-            // 6. Aggiungiamo il nostro nuovo post-it alla griglia
+            // 5. Aggiungiamo il nostro nuovo post-it alla griglia
             noteListPanel.add(noteWidget);
         }
     }

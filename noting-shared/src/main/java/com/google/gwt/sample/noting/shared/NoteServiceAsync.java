@@ -44,7 +44,7 @@ public interface NoteServiceAsync {
     void annullaCondivisione(String username, int notaId, AsyncCallback<Void> arg3);
     void cercaUtente(String username, AsyncCallback<Boolean> arg2);
     void creaCopiaNota(String username, int notaId, AsyncCallback<Void> arg3);
-    void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String> utentiCondivisi, List<String> tags, AsyncCallback<Void> callback);
+    void creazioneNota(String titolo, String contenuto, Note.Stato stato, List<String> utentiCondivisi, AsyncCallback<Void> arg5);
     void eliminaNota(String username, int notaId, AsyncCallback<Void> arg3);
    // void eliminaUltimaNota(AsyncCallback<Void> arg1);
     void getAllUsernames(AsyncCallback<List<String>> arg1);
@@ -72,8 +72,5 @@ public interface NoteServiceAsync {
     void getNoteHistory(int noteId, AsyncCallback<List<NoteMemento>> callback);
     void restoreNoteFromHistory(int noteId, int historyIndex, AsyncCallback<Note> callback);
 
-    void getAllTags(AsyncCallback<List<String>> callback);
-    void addTagToNote(int noteId, String tagName, AsyncCallback<Void> callback);
-    void removeTagFromNote(int noteId, String tagName, AsyncCallback<Void> callback);
-    void createNewTag(String tagName, AsyncCallback<Void> callback);
+
 }
