@@ -46,8 +46,7 @@ public interface NoteService extends RemoteService {
     //Rilascia il lock posseduto dall'utente corrente
     void releaseLock(int noteId) throws NotingException;
 
-    List<NoteMemento> getNoteHistory(int noteId) throws NotingException;
-    Note restoreNoteFromHistory(int noteId, int historyIndex) throws NotingException;
+
 }
 
 

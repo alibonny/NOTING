@@ -3,10 +3,8 @@ package com.google.gwt.sample.noting.server;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.ServletContextEvent;
@@ -18,7 +16,6 @@ import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
 
 import com.google.gwt.sample.noting.shared.Note;
-import com.google.gwt.sample.noting.shared.NoteMemento;
 
 @WebListener
 public class DBManager implements ServletContextListener {
@@ -32,46 +29,11 @@ public class DBManager implements ServletContextListener {
     private static ConcurrentMap<Integer, List<String>> listaCondivisione;   // noteId -> destinatari
     private static ConcurrentMap<Integer, Note> noteById;       
 
-    private static final ConcurrentMap<Integer, LinkedList<NoteMemento>> noteHistoryDatabase = new ConcurrentHashMap<>();
-
     // Sequenza ID atomica (sostituisce Var<Integer>)
     private static org.mapdb.Atomic.Long noteIdSeq;
 
     // --- Lifecycle Servlet ---
 
-    public static void saveNoteMemento(int noteId, Note nota) {
-        if (nota == null) return;
-        LinkedList<NoteMemento> history = noteHistoryDatabase.computeIfAbsent(noteId, k -> new LinkedList<>());
-        // Limita la cronologia a max 3 versioni
-        if (history.size() >= 3) history.removeFirst();
-        history.addLast(new NoteMemento(nota.getTitle(), nota.getContent(), new java.util.Date()));
-    }
-
-    public static List<NoteMemento> getNoteHistory(int noteId) {
-        LinkedList<NoteMemento> history = noteHistoryDatabase.get(noteId);
-        return history != null ? new LinkedList<>(history) : new LinkedList<>();
-    }
-
-    public static NoteMemento getNoteHistoryEntry(int noteId, int historyIndex) {
-        LinkedList<NoteMemento> history = noteHistoryDatabase.get(noteId);
-        if (history == null || historyIndex < 0 || historyIndex >= history.size()) return null;
-        return history.get(historyIndex);
-    }
-
-    public static Note restoreNoteFromMemento(int noteId, NoteMemento memento) {
-        // Cerca la nota e aggiorna titolo/contenuto
-        for (List<Note> notes : getNotesDatabase().values()) {
-            for (Note n : notes) {
-                if (n.getId() == noteId) {
-                    n.setTitle(memento.getTitle());
-                    n.setContent(memento.getContent());
-                    return n;
-                }
-            }
-        }
-        return null;
-    }
-    
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         System.out.println("[DB] Inizializzazione MapDB (file)...");

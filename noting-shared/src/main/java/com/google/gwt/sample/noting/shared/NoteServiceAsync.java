@@ -68,9 +68,7 @@ public interface NoteServiceAsync {
     void cercaUtente2(Note nota, String username, AsyncCallback<Boolean> arg) ;
     void aggiungiCondivisione(int noteId, String username, AsyncCallback<Note> callback);
     void getNotaById(int noteId, AsyncCallback<Note> cb);
-    
-    void getNoteHistory(int noteId, AsyncCallback<List<NoteMemento>> callback);
-    void restoreNoteFromHistory(int noteId, int historyIndex, AsyncCallback<Note> callback);
+
 
 
 }
