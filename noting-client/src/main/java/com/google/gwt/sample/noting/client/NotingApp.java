@@ -175,8 +175,8 @@ public class NotingApp implements EntryPoint {
 
         createNoteView.setCreateNoteViewListener(new CreateNoteViewListener() {
             @Override
-            public void onSave(String titolo, String contenuto, Note.Stato stato, List<String> utentiList) {
-                service.creazioneNota(titolo, contenuto, stato, utentiList, new AsyncCallback<Void>() {
+            public void onSave(String titolo, String contenuto, Note.Stato stato, List<String> utentiList, List<String> tags) {
+                service.creazioneNota(titolo, contenuto, stato, utentiList, tags, new AsyncCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         Window.alert("Nota creata con successo!");
@@ -280,6 +280,21 @@ public class NotingApp implements EntryPoint {
                         Window.alert("Errore durante l'eliminazione: " + caught.getMessage());
                     }
                 });
+            }
+
+            @Override
+            public void onAddTagToNote(int noteId, String tagName, AsyncCallback<Void> callback) {
+                service.addTagToNote(noteId, tagName, callback);
+            }
+
+            @Override
+            public void onRemoveTagFromNote(int noteId, String tagName, AsyncCallback<Void> callback) {
+                service.removeTagFromNote(noteId, tagName, callback);
+            }
+
+            @Override
+            public void onCreateNewTag(String tagName, AsyncCallback<Void> callback) {
+                service.createNewTag(tagName, callback);
             }
 
             @Override

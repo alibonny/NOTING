@@ -19,6 +19,7 @@ import org.mapdb.Serializer;
 
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteMemento;
+import com.google.gwt.sample.noting.shared.Tag;
 
 @WebListener
 public class DBManager implements ServletContextListener {
@@ -30,7 +31,9 @@ public class DBManager implements ServletContextListener {
     private static ConcurrentMap<String, String> usersDatabase;              // username -> password
     private static ConcurrentMap<String, List<Note>> notesDatabase;          // ownerUsername -> note dell'owner
     private static ConcurrentMap<Integer, List<String>> listaCondivisione;   // noteId -> destinatari
-    private static ConcurrentMap<Integer, Note> noteById;       
+    private static ConcurrentMap<Integer, Note> noteById;     
+    private static ConcurrentMap<String, Tag> tagsDatabase;                  // tagName -> tag object
+    private static ConcurrentMap<Integer, List<String>> noteTags;           // noteId -> lista di tag names  
 
     private static final ConcurrentMap<Integer, LinkedList<NoteMemento>> noteHistoryDatabase = new ConcurrentHashMap<>();
 
@@ -144,7 +147,18 @@ public class DBManager implements ServletContextListener {
         notesDatabase       = db.hashMap("notes",             Serializer.STRING,  Serializer.JAVA  ).createOrOpen();
         listaCondivisione   = db.hashMap("listaCondivisione", Serializer.INTEGER, Serializer.JAVA  ).createOrOpen();
         noteById            = db.hashMap("noteById",          Serializer.INTEGER, Serializer.JAVA  ).createOrOpen();
+        tagsDatabase        = db.hashMap("tags",              Serializer.STRING,  Serializer.JAVA  ).createOrOpen();
+        noteTags            = db.hashMap("noteTags",          Serializer.INTEGER, Serializer.JAVA  ).createOrOpen();
         noteIdSeq           = db.atomicLong("noteIdSeq").createOrOpen();
+
+        // Inizializza i tag predefiniti se non esistono
+        if (tagsDatabase.isEmpty()) {
+            String[] defaultTags = {"Università", "Tempo libero", "Importante", "Promemoria", "Cose da fare"};
+            for (String tagName : defaultTags) {
+                tagsDatabase.put(tagName, new Tag(tagName));
+            }
+            db.commit();
+        }
 
         // Ricostruisci indice id->nota se mancante ma sono presenti note in notesDatabase
         if (noteById.isEmpty() && !notesDatabase.isEmpty()) {
@@ -281,4 +295,45 @@ public class DBManager implements ServletContextListener {
         }
         return shared;
     }
+
+    // Metodi per la gestione dei tag
+    public static ConcurrentMap<String, Tag> getTagsDatabase() {
+        ensureReady();
+        return tagsDatabase;
+    }
+
+    public static ConcurrentMap<Integer, List<String>> getNoteTags() {
+        ensureReady();
+        return noteTags;
+    }
+
+    public static List<String> getTagsForNote(int noteId) {
+        ensureReady();
+        return noteTags.getOrDefault(noteId, new ArrayList<>());
+    }
+
+    public static void addTagToNote(int noteId, String tagName) {
+        ensureReady();
+        List<String> tags = noteTags.computeIfAbsent(noteId, k -> new ArrayList<>());
+        if (!tags.contains(tagName)) {
+            tags.add(tagName);
+            db.commit();
+        }
+    }
+
+    public static void removeTagFromNote(int noteId, String tagName) {
+        ensureReady();
+        List<String> tags = noteTags.get(noteId);
+        if (tags != null) {
+            tags.remove(tagName);
+            db.commit();
+        }
+    }
+
+    public static void removeAllTagsFromNote(int noteId) {
+        ensureReady();
+        noteTags.remove(noteId);
+        db.commit();
+    }
+
 }

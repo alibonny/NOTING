@@ -50,7 +50,7 @@ public class NoteCreazioneTest {
 
         @Test
     void creaNota_conTitoloValido_creaNota() throws Exception{
-        service.creazioneNota("Titolo", "c", Stato.Privata, null);
+        service.creazioneNota("Titolo", "c", Stato.Privata, null, null);
         List<Note> notes = DBManager.getNotesDatabase().get("tester");
         assertEquals(1, notes.size());
     }
@@ -58,7 +58,7 @@ public class NoteCreazioneTest {
 
         @Test
     void creaNota_success_con_tutti_i_campi() throws Exception {
-        service.creazioneNota(" Titolo ", "contenuto", Stato.Condivisa, List.of("alice", "bob"));
+        service.creazioneNota(" Titolo ", "contenuto", Stato.Condivisa, List.of("alice", "bob"), null);
 
         // notesByOwner contiene la nota
         ConcurrentMap<String, List<Note>> notesByOwner = DBManager.getNotesDatabase();
@@ -87,14 +87,14 @@ public class NoteCreazioneTest {
     @Test
 void creaNota_contenutoNull_lanciaEccezione() {
     assertThrows(NotingException.class,
-        () -> service.creazioneNota("Note1", null, null, null),
+        () -> service.creazioneNota("Note1", null, null, null, null),
         "Se il contenuto è null deve lanciare eccezione");
 }
 
 @Test
 void creaNota_condivisione_filtraDuplicati_e_SelfShare() throws Exception {
     service.creazioneNota("Note2", "c", Stato.Condivisa,
-            List.of("alice", " alice ", "tester", "nonEsiste"));
+            List.of("alice", " alice ", "tester", "nonEsiste"), null);
 
     List<String> share = DBManager.getListaCondivisione()
                                   .get(DBManager.getNoteById().size()); // ultima nota
@@ -105,15 +105,15 @@ void creaNota_condivisione_filtraDuplicati_e_SelfShare() throws Exception {
     @Test
     void creaNota_titolo_vuoto_throws() {
         assertThrows(NotingException.class,
-            () -> service.creazioneNota("   ", "c", Stato.Privata, null));
+            () -> service.creazioneNota("   ", "c", Stato.Privata, null, null));
         assertThrows(NotingException.class,
-            () -> service.creazioneNota(null, "c", Stato.Privata, null));
+            () -> service.creazioneNota(null, "c", Stato.Privata, null, null));
     }
 
     @Test
     void creaNota_incrementa_id_e_non_perde_note_precedenti() throws Exception {
-        service.creazioneNota("N1", "c1", Stato.Privata, null);
-        service.creazioneNota("N2", "c2", Stato.Privata, null);
+        service.creazioneNota("N1", "c1", Stato.Privata, null, null);
+        service.creazioneNota("N2", "c2", Stato.Privata, null, null);
 
         List<Note> notes = DBManager.getNotesDatabase().get("tester");
         assertEquals(2, notes.size());

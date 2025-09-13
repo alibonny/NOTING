@@ -21,8 +21,17 @@
             <g:SuggestBox ui:field="utenteBox" styleName="status" />
             <g:Button ui:field="shareBtn" text="Condividi" styleName="bottoneLogin" />
         </g:HorizontalPanel>
-        
+
         <g:Label ui:field="utentiCondivisi" text=""/>
+
+        <g:HorizontalPanel spacing="10" verticalAlignment="ALIGN_MIDDLE" styleName="button-panel">
+            <g:Label text="Tag:" styleName="label2"/>
+            <g:ListBox ui:field="tagBox" styleName="status" />
+            <g:Button ui:field="addTagButton" text="Aggiungi Tag" styleName="bottoneLogin" />
+            
+            <g:TextBox ui:field="newTagBox" styleName="note-input" visible="false" />
+            <g:Button ui:field="confirmNewTagButton" text="Conferma" styleName="bottoneLogin" visible="false" />
+        </g:HorizontalPanel>
         
         <g:FlowPanel styleName="button-panel">
             <g:Button ui:field="saveButton" text="Salva" styleName="bottoneLogin"/>
