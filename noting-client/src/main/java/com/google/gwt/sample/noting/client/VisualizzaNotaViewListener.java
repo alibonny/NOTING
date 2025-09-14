@@ -25,4 +25,8 @@ public interface VisualizzaNotaViewListener {
 
     void onGetNoteHistory(int noteId, AsyncCallback<List<NoteMemento>> callback);
     void onRestoreNote(int noteId, int historyIndex, AsyncCallback<Note> callback);
+
+    void onAddTagToNote(int noteId, String tagName, AsyncCallback<Void> callback);
+    void onRemoveTagFromNote(int noteId, String tagName, AsyncCallback<Void> callback);
+    void onCreateNewTag(String tagName, AsyncCallback<Void> callback);
 }

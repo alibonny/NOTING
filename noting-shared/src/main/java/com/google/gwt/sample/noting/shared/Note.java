@@ -11,6 +11,7 @@ public class Note implements Serializable {
     private int id;
     private Stato stato;
     private List<String> utentiCondivisi = new ArrayList<>();
+    private List<String> tags = new ArrayList<>();
 
     public enum Stato {
         Privata,Condivisa,CondivisaSCR
@@ -90,5 +91,21 @@ public class Note implements Serializable {
         this.utentiCondivisi = (utentiCondivisi == null) ? new ArrayList<>() : new ArrayList<>(utentiCondivisi);
     }
 
+    public List<String> getTags() {
+    return tags;
+    }
 
+    public void setTags(List<String> tags) {
+        this.tags = (tags == null) ? new ArrayList<>() : new ArrayList<>(tags);
+    }
+
+    public void addTag(String tag) {
+        if (!tags.contains(tag)) {
+            tags.add(tag);
+        }
+    }
+
+    public void removeTag(String tag) {
+        tags.remove(tag);
+    }
 }

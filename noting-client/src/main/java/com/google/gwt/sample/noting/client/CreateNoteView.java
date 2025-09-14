@@ -15,6 +15,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.SuggestBox;
@@ -39,12 +40,17 @@ public class CreateNoteView extends Composite {
 
     @UiField Label utentiCondivisi; // Aggiunto per mostrare gli utenti condivisi
     
+    @UiField ListBox tagBox;
+    @UiField TextBox newTagBox;
+    @UiField Button confirmNewTagButton;
+    @UiField Button addTagButton;
     
     private List<String> utentiList = new ArrayList<>(); // Lista per gli utenti condivisi
-
+    private List<String> selectedTags = new ArrayList<>();
 
 
     private CreateNoteViewListener listener;
+    private boolean isCreatingNewTag = false;
 
     public CreateNoteView() {
         initWidget(uiBinder.createAndBindUi(this));
@@ -53,24 +59,111 @@ public class CreateNoteView extends Composite {
             statoBox.addItem(stato.name());
         }
         utenteBox.setVisible(false); // Nascondi il campo utente inizialmente
+        newTagBox.setVisible(false);
+        confirmNewTagButton.setVisible(false);
+
+        loadAvailableTags();
     }
+
 
     public void setCreateNoteViewListener(CreateNoteViewListener listener) {
         this.listener = listener;
     }
 
-@UiHandler("statoBox")
-void onStatoBoxChange(ChangeEvent event) {
-    String selectedText = statoBox.getItemText(statoBox.getSelectedIndex());
-
-    if ("Condivisa".equals(selectedText) || "CondivisaSCR".equals(selectedText)) {
-        utenteBox.setVisible(true);
-    } else if ("Privata".equals(selectedText)) {
-        utenteBox.setVisible(false);
-    } else {
-        utenteBox.setVisible(true);
+    private void loadAvailableTags() {
+        tagBox.clear();
+        tagBox.addItem("Seleziona tag", "");
+        
+        String[] defaultTags = {"Università", "Tempo libero", "Importante", "Promemoria", "Cose da fare"};
+        for (String tag : defaultTags) {
+            tagBox.addItem(tag, tag);
+        }
+        
+        tagBox.addItem("Crea nuovo", "new");
     }
-}
+
+    @UiHandler("tagBox")
+    void onTagBoxChange(ChangeEvent event) {
+        String selectedValue = tagBox.getSelectedValue();
+        
+        if ("new".equals(selectedValue)) {
+            newTagBox.setVisible(true);
+            confirmNewTagButton.setVisible(true);
+            addTagButton.setVisible(false);
+            newTagBox.setFocus(true);
+            isCreatingNewTag = true;
+         } else if (!selectedValue.isEmpty() && !"".equals(selectedValue)) {
+            addTagButton.setVisible(true);
+            newTagBox.setVisible(false);
+            confirmNewTagButton.setVisible(false);
+            isCreatingNewTag = false;
+        }
+    }
+
+     @UiHandler("addTagButton")
+    void onAddTagClick(ClickEvent e) {
+        String selectedValue = tagBox.getSelectedValue();
+        
+        if ("new".equals(selectedValue)) {
+            newTagBox.setVisible(true);
+            confirmNewTagButton.setVisible(true);
+            addTagButton.setVisible(false);
+            newTagBox.setFocus(true);
+            isCreatingNewTag = true;
+        } else if (!selectedValue.isEmpty() && !"".equals(selectedValue)) {
+            String selectedTag = tagBox.getSelectedItemText();
+            addTagToSelection(selectedTag);
+        }
+    }
+
+    @UiHandler("confirmNewTagButton")
+    void onConfirmNewTagClick(ClickEvent e) {
+        String newTag = newTagBox.getText().trim();
+        if (!newTag.isEmpty()) {
+            addTagToSelection(newTag);
+             int lastIndex = tagBox.getItemCount() - 1;
+            tagBox.insertItem(newTag, newTag, lastIndex);
+
+            for (int i = 0; i < tagBox.getItemCount(); i++) {
+                if (newTag.equals(tagBox.getValue(i))) {
+                    tagBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+
+            newTagBox.setVisible(false);
+            confirmNewTagButton.setVisible(false);
+            addTagButton.setVisible(true);
+            newTagBox.setText("");
+            isCreatingNewTag = false;
+        }
+    }
+
+    private void addTagToSelection(String tag) {
+        if (!selectedTags.contains(tag)) {
+            selectedTags.add(tag);
+            updateSelectedTagsLabel();
+            Window.alert("Tag aggiunto: " + tag);
+        }
+    }
+
+    private void updateSelectedTagsLabel() {
+        String tagsText = "Tag selezionati: " + String.join(", ", selectedTags);
+    }
+
+
+    @UiHandler("statoBox")
+    void onStatoBoxChange(ChangeEvent event) {
+        String selectedText = statoBox.getItemText(statoBox.getSelectedIndex());
+
+        if ("Condivisa".equals(selectedText) || "CondivisaSCR".equals(selectedText)) {
+            utenteBox.setVisible(true);
+        } else if ("Privata".equals(selectedText)) {
+            utenteBox.setVisible(false);
+        } else {
+            utenteBox.setVisible(true);
+        }
+    }
 
    @UiHandler("saveButton")
     void onSaveClick(ClickEvent e) {
@@ -87,7 +180,7 @@ void onStatoBoxChange(ChangeEvent event) {
 
 
         if (listener != null) {
-            listener.onSave(titolo, contenuto, stato, utentiList);
+            listener.onSave(titolo, contenuto, stato, utentiList, selectedTags);
      }
     }
 

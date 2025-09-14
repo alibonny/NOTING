@@ -13,7 +13,7 @@ import com.google.gwt.sample.noting.shared.NotingException;
 public class NoteComandiCoreImpl implements NoteComandiCore {
 
     @Override
-    public void creazioneNota(String owner, String titolo, String contenuto, Note.Stato stato, List<String> utentiCondivisi)
+    public void creazioneNota(String owner, String titolo, String contenuto, Note.Stato stato, List<String> utentiCondivisi, List<String> tags)
         throws NotingException {
           if (owner == null || owner.isBlank()) {
             throw new NotingException("Utente non valido (owner mancante).");
@@ -58,9 +58,13 @@ public class NoteComandiCoreImpl implements NoteComandiCore {
         DBManager.getNoteById().put(id, n);
         DBManager.getListaCondivisione().put(id, new ArrayList<>(destinatari));
 
-        DBManager.commit();
+        if (tags != null && !tags.isEmpty()) {
+            for (String tag : tags) {
+                DBManager.addTagToNote(n.getId(), tag);
+            }
+        }
 
-        
+        DBManager.commit();  
     }
 
     @Override
@@ -120,6 +124,8 @@ public class NoteComandiCoreImpl implements NoteComandiCore {
             if (!replaced) userNotes.add(aggiornata);
             notesDB.put(owner, userNotes);
         }
+
+
 
         // condivisione
         if (aggiornata.getStato() == Note.Stato.Privata || aggiornata.getUtentiCondivisi().isEmpty()) {
