@@ -141,18 +141,31 @@ public class VisualizzaNotaView extends Composite {
 
     private void updateShareSectionVisibility() {
         boolean visible = isOwner() && isSharedState();
+
+        // Rimuove o aggiunge manualmente lo stile "hidden" per garantire la visibilità
+        if (visible) {
+            shareSection.removeStyleName("hidden");
+            renderCondivisioni();
+        } else {
+            shareSection.addStyleName("hidden");
+            sharedUsersPanel.clear();
+        }
+
         shareSection.setVisible(visible);
-        if (visible) renderCondivisioni();
-        else sharedUsersPanel.clear();
     }
 
     private void applyReadOnly() {
         titoloBox.setReadOnly(true);
         contenutoArea.setReadOnly(true);
         statoBox.setEnabled(false);
-        salvaButton.setVisible(true);
-        salvaButton.setEnabled(true);
+        salvaButton.setVisible(true); // Lasciamo visibile Salva
+        salvaButton.setEnabled(false); // Ma disabilitato in read-only
+
         modificaButton.setEnabled(true);
+
+        // Disabilita i bottoni dei tag quando non si è in modalità modifica
+        addTagButton.setEnabled(false);
+        eliminaTagButton.setEnabled(false);
     }
 
     private void applyEdit(boolean owner) {
@@ -282,8 +295,12 @@ public class VisualizzaNotaView extends Composite {
         restoreButton.setVisible(true);
     }
 
-    public void enableEditing(boolean isOwner) {
+   public void enableEditing(boolean isOwner) {
         applyEdit(isOwner);
+        // Abilita i bottoni dei tag solo dopo aver cliccato "Modifica"
+        addTagButton.setEnabled(true);
+        eliminaTagButton.setEnabled(true);
+        salvaButton.setEnabled(true); // Abilita il salvataggio
     }
 
     public void disableEditingWithMessage(String message) {
@@ -305,6 +322,16 @@ public class VisualizzaNotaView extends Composite {
         if (selectedValue != null) {
             nota.setStato(Note.Stato.valueOf(selectedValue));
         }
+
+        // aggiornamento dei tag prima del salvataggio
+        List<String> tagsToSave = new ArrayList<>();
+        String selectedTagValue = tagBox.getSelectedValue();
+        // Aggiungi il tag solo se è stato selezionato qualcosa di valido
+        if (selectedTagValue != null && !selectedTagValue.isEmpty() && !"new".equals(selectedTagValue)) {
+            tagsToSave.add(tagBox.getSelectedItemText());
+        }
+        nota.setTags(tagsToSave);
+        //
 
         applyReadOnly();
         salvaButton.setEnabled(false);
@@ -424,11 +451,22 @@ public class VisualizzaNotaView extends Composite {
 
     private void updateTagDisplay() {
         if (nota.getTags() != null && !nota.getTags().isEmpty()) {
-            tagBox.setSelectedIndex(0);
-        eliminaTagButton.setVisible(true);
+            String currentTag = nota.getTags().get(0);
+            boolean tagFound = false;
+            for (int i = 0; i < tagBox.getItemCount(); i++) {
+                if (currentTag.equals(tagBox.getValue(i))) {
+                    tagBox.setSelectedIndex(i);
+                    tagFound = true;
+                    break;
+                }
+            }
+            if (!tagFound) {
+                tagBox.setSelectedIndex(0);
+            }
+            eliminaTagButton.setVisible(true);
         } else {
-        tagBox.setSelectedIndex(0);
-        eliminaTagButton.setVisible(false);
+            tagBox.setSelectedIndex(0);
+            eliminaTagButton.setVisible(false);
         }
     }
 

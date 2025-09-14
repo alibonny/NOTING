@@ -10,46 +10,39 @@
         
         <g:TextArea ui:field="contenutoArea" styleName="note-textarea" />
         
-        <g:Label text="Stato:" styleName="label2"/>
-        
-         <g:HorizontalPanel spacing="10" styleName="button-panel">
-            <g:ListBox ui:field="statoBox" styleName="status"/>  
+        <g:HorizontalPanel spacing="10" verticalAlignment="ALIGN_MIDDLE" styleName="button-panel">
+            <g:Label text="Stato:" styleName="label2"/>
+            <g:ListBox ui:field="statoBox" styleName="status"/>
             <g:Button ui:field="modificaButton" text="Modifica" styleName="bottoneLogin"/>
+            <g:Button ui:field="restoreButton" text="⮌ Ripristina" styleName="bottoneLogin"/>
+            <g:ListBox ui:field="historyBox" styleName="hidden"/>
+        </g:HorizontalPanel>
+        
+        <g:HorizontalPanel spacing="10" verticalAlignment="ALIGN_MIDDLE" styleName="button-panel">
+            <g:Label text="Tag:" styleName="label2"/>
+            <g:ListBox ui:field="tagBox" styleName="statusTag" />
+            <g:TextBox ui:field="newTagBox" styleName="note-input" visible="false" />
+            <g:Button ui:field="addTagButton" text="Modifica Tag" styleName="bottoneLogin" />
+            <g:Button ui:field="eliminaTagButton" text="Elimina Tag" styleName="bottoneLogin" />
+        </g:HorizontalPanel>
+
+        <g:HTMLPanel ui:field="shareSection" styleName="share-section hidden">
+            <g:Label text="Condivisa con:" styleName="label2"/>
+            <g:FlowPanel ui:field="sharedUsersPanel" />
+            
+            <g:HorizontalPanel spacing="10" verticalAlignment="ALIGN_MIDDLE" styleName="button-panel">
+                <g:Button ui:field="aggiungiUtenteButton" text="➕ Aggiungi utente" styleName="bottoneLogin"/>
+                <g:SuggestBox ui:field="cercaUtenteDaAggiungere" styleName="status" />
+                <g:Button ui:field="confermaUtenteDaAggiungere" text="Conferma" styleName="bottoneLogin"/>
+            </g:HorizontalPanel>
+        </g:HTMLPanel>
+
+        <g:HorizontalPanel spacing="10" verticalAlignment="ALIGN_MIDDLE" styleName="button-panel" horizontalAlignment="ALIGN_CENTER">
             <g:Button ui:field="salvaButton" text="Salva" styleName="bottoneLogin"/>
             <g:Button ui:field="eliminaButton" text="Elimina" styleName="bottoneLogin"/>
             <g:Button ui:field="creaUnaCopia" text="CreaCopia" styleName="bottoneLogin"/>
             <g:Button ui:field="annullaCondivisione" text="Annulla Condivisione" styleName="bottoneLogin"/>
         </g:HorizontalPanel>
-
-        <!-- SOTTO il menù dei bottoni -->
-        <g:HorizontalPanel styleName="restore-panel">
-            <g:Button ui:field="restoreButton" text="⮌ Ripristina" styleName="bottoneLogin"/>
-            <g:ListBox ui:field="historyBox" styleName="hidden"/>
-        </g:HorizontalPanel>
-
-    <g:HorizontalPanel spacing="10" verticalAlignment="ALIGN_MIDDLE" styleName="button-panel">
-        <g:Label text="Tag:" styleName="label2"/>
-        <g:ListBox ui:field="tagBox" styleName="status" />
-        <g:TextBox ui:field="newTagBox" styleName="note-input" visible="false" />
-        <g:Button ui:field="addTagButton" text="Modifica Tag" styleName="bottoneLogin" />
-        <g:Button ui:field="eliminaTagButton" text="Elimina Tag" styleName="bottoneLogin" />
-    </g:HorizontalPanel>
-
-        <!-- Contenitore SEZIONE CONDIVISIONE (nascosto di default) -->
-        <g:HTMLPanel ui:field="shareSection" styleName="share-section hidden">
-
-        <g:Label text="Condivisa con:" styleName="label2"/>
-        <g:FlowPanel ui:field="sharedUsersPanel" />
-        <g:Button ui:field="aggiungiUtenteButton" text="➕ Aggiungi utente" styleName="bottoneLogin"/>
-    </g:HTMLPanel>
-
-
-            <!-- Barra di ricerca + Conferma -->
-        <g:HorizontalPanel spacing="10" styleName="search-panel">
-            <g:SuggestBox ui:field="cercaUtenteDaAggiungere" styleName="status" />
-            <g:Button ui:field="confermaUtenteDaAggiungere" text="Conferma" styleName="bottoneLogin"/>
-        </g:HorizontalPanel>
-
 
     </g:HTMLPanel>
 </ui:UiBinder>

@@ -155,7 +155,16 @@ html, body{
     cursor: pointer;
 }
 
-.status:hover {
+.statusTag{
+    background-color: rgb(241, 226, 84) ;
+    border: 1px solid #dad262;  
+    border-radius: 5px;        
+    padding: 8px;          
+    font-size: 16px;           
+    cursor: pointer;
+}
+
+.status:hover, .statusTag:hover {
     border-color: #888;
 }
 
@@ -267,3 +276,4 @@ html, body{
     margin: 10px 0;
     align-items: center;
 }
+
