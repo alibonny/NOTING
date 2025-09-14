@@ -6,6 +6,7 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.sample.noting.shared.LockToken;
 import com.google.gwt.sample.noting.shared.Note;
+import com.google.gwt.sample.noting.shared.NoteMemento;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NoteServiceAsync;
 import com.google.gwt.sample.noting.shared.User;
@@ -222,154 +223,165 @@ public class NotingApp implements EntryPoint {
     }
 
      private void loadVisualizzaNota(Note nota, User user) {
-    GWT.log("[DBG] entro in loadVisualizzaNota con user=" 
-    + (user != null ? user.getUsername() : "NULL")
-    + ", note=" + (nota != null ? nota.getTitle() : "NULL"));
-    VisualizzaNotaView view = new VisualizzaNotaView(nota,user);
+        GWT.log("[DBG] entro in loadVisualizzaNota con user=" 
+        + (user != null ? user.getUsername() : "NULL")
+        + ", note=" + (nota != null ? nota.getTitle() : "NULL"));
+        VisualizzaNotaView view = new VisualizzaNotaView(nota,user);
 
-    view.setVisualizzaNotaViewListener(new VisualizzaNotaViewListener() {
-        @Override
-        public void onBack() {
-            stopLockHeartbeat();
-            loadHomeView(); // torna alla home
-        }
+        view.setVisualizzaNotaViewListener(new VisualizzaNotaViewListener() {
 
-        @Override
-        public void onSalvaNota(Note notaModificata) {
-            service.updateNota(notaModificata, new AsyncCallback<Void>() {
-                @Override
-                public void onSuccess(Void result) {
-                    stopLockHeartbeat(); // ferma il rinnovo del lock
-                    Window.alert("Nota salvata con successo!");
-                    loadHomeView(); // torna alla home dopo il salvataggio
-                }
-
-                @Override
-                public void onFailure(Throwable caught) {
-                    Window.alert("Errore nel salvataggio: " + caught.getMessage());
-                }
-            });
-        }
-
-        
-
-        @Override
-        public void onEliminaNota(Note notaDaEliminare) {
-            service.eliminaNota(loggedInUser.getUsername(), notaDaEliminare.getId(), new AsyncCallback<Void>() {
-                @Override
-                public void onSuccess(Void result) {
-                    stopLockHeartbeat(); // ferma il rinnovo del lock
-                    Window.alert("Nota eliminata con successo!");
-                    loadHomeView();
-                }
-
-                @Override
-                public void onFailure(Throwable caught) {
-                    Window.alert("Errore durante l'eliminazione: " + caught.getMessage());
-                }
-            });
-        }
-
-        @Override
-        public void onCreaUnaCopia(Note notaDaCopiare) {
-            Window.alert("utente: " + loggedInUser.getUsername());
-            service.creaCopiaNota(loggedInUser.getUsername(), notaDaCopiare.getId(), new AsyncCallback<Void>() {
-                @Override
-                public void onSuccess(Void result) {
-                    stopLockHeartbeat(); // ferma il rinnovo del lock
-                    Window.alert("Copia della nota creata con successo!");
-                    Window.alert("utente: " + loggedInUser.getUsername());
-
-                    loadHomeView(); // Torna alla home dopo la creazione della copia
-                }
-
-                @Override
-                public void onFailure(Throwable caught) {
-                    Window.alert("Errore nella creazione della copia: " + caught.getMessage());
-                    Window.alert("utente: " + loggedInUser.getUsername());
-
-                }
-            });
-        }
-        @Override
-        public void onAnnullaCondivisione(Note notaDaAnnullare) {
-             service.annullaCondivisione(loggedInUser.getUsername(), notaDaAnnullare.getId(), new AsyncCallback<Void>() {
-                @Override
-                public void onSuccess(Void result) {
-                    stopLockHeartbeat();
-                    Window.alert("Condivisione della nota annullata con successo!");
-                    loadHomeView(); // Torna alla home dopo aver annullato la condivisione
-                }
-
-                @Override
-                public void onFailure(Throwable caught) {
-                    Window.alert("Errore nell'annullamento della condivisione: " + caught.getMessage());
-                }
-            });
-        }
-
-        @Override
-        public void onRimuoviUtenteCondivisione(Note nota, String username, AsyncCallback<Note> callback){
-            service.rimuoviUtenteCondivisione(nota.getId(),username, new AsyncCallback<Note>() {
-                @Override
-                public void onSuccess(Note fresh) {
-                    Window.alert("Utente rimosso dalla condivisione con successo!");
-
-                   
-
-                    // ricarica la vista con l'oggetto nota aggiornato
-                    loadVisualizzaNota(fresh, user);
-                }
-
-                @Override
-                public void onFailure(Throwable caught) {
-                    Window.alert("Errore nella rimozione dell'utente dalla condivisione: " + caught.getMessage());
-                }
-            });
-
-        }
-
-
-        @Override
-        public void onRichiediLock(int noteId) {
-            service.tryAcquireLock(noteId, new AsyncCallback<LockToken>(){
             @Override
-            public void onSuccess(LockToken token) {
-                boolean isOwner = loggedInUser.getUsername().equals(nota.getOwnerUsername());
-                view.enableEditing(isOwner);
-                startLockHeartbeat(noteId); // il timer che fa renew ogni 30s
+            public void onGetNoteHistory(int noteId, AsyncCallback<List<NoteMemento>> callback) {
+                service.getNoteHistory(noteId, callback);
             }
 
             @Override
-            public void onFailure(Throwable caught) {
-                view.disableEditingWithMessage("Nota già in modifica da un altro utente: " + caught.getMessage());
-                loadHomeView();
-            } 
-        });
-    }
+            public void onRestoreNote(int noteId, int historyIndex, AsyncCallback<Note> callback) {
+                service.restoreNoteFromHistory(noteId, historyIndex, callback);
+            }
 
-      
-         @Override
-        public void trovaUtente2(Note nota,String username, AsyncCallback<Boolean> callback) {
-                System.out.println("cerca utente" + username);
+            @Override
+            public void onBack() {
+                stopLockHeartbeat();
+                loadHomeView(); // torna alla home
+            }
 
-                service.cercaUtente2(nota,username,new AsyncCallback<Boolean>() {
-                @Override
-                public void onSuccess(Boolean exists) {
-                    if (Boolean.TRUE.equals(exists)) {
-
-                        callback.onSuccess(true);
-                        // eventuale logica di condivisione, es: service.condividiNota(...)
-                    } else {
-                        callback.onSuccess(false);
+            @Override
+            public void onSalvaNota(Note notaModificata) {
+                service.updateNota(notaModificata, new AsyncCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        stopLockHeartbeat(); // ferma il rinnovo del lock
+                        Window.alert("Nota salvata con successo!");
+                        loadHomeView(); // torna alla home dopo il salvataggio
                     }
-                }
-                 @Override
-                 public void onFailure(Throwable caught) {
-                    Window.alert("Errore nella ricerca utente: " + caught.getMessage());
-                 }
-            });
-        }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nel salvataggio: " + caught.getMessage());
+                    }
+                });
+            }
+
+            
+
+            @Override
+            public void onEliminaNota(Note notaDaEliminare) {
+                service.eliminaNota(loggedInUser.getUsername(), notaDaEliminare.getId(), new AsyncCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        stopLockHeartbeat(); // ferma il rinnovo del lock
+                        Window.alert("Nota eliminata con successo!");
+                        loadHomeView();
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore durante l'eliminazione: " + caught.getMessage());
+                    }
+                });
+            }
+
+            @Override
+            public void onCreaUnaCopia(Note notaDaCopiare) {
+                Window.alert("utente: " + loggedInUser.getUsername());
+                service.creaCopiaNota(loggedInUser.getUsername(), notaDaCopiare.getId(), new AsyncCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        stopLockHeartbeat(); // ferma il rinnovo del lock
+                        Window.alert("Copia della nota creata con successo!");
+                        Window.alert("utente: " + loggedInUser.getUsername());
+
+                        loadHomeView(); // Torna alla home dopo la creazione della copia
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nella creazione della copia: " + caught.getMessage());
+                        Window.alert("utente: " + loggedInUser.getUsername());
+
+                    }
+                });
+            }
+            @Override
+            public void onAnnullaCondivisione(Note notaDaAnnullare) {
+                service.annullaCondivisione(loggedInUser.getUsername(), notaDaAnnullare.getId(), new AsyncCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        stopLockHeartbeat();
+                        Window.alert("Condivisione della nota annullata con successo!");
+                        loadHomeView(); // Torna alla home dopo aver annullato la condivisione
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nell'annullamento della condivisione: " + caught.getMessage());
+                    }
+                });
+            }
+
+            @Override
+            public void onRimuoviUtenteCondivisione(Note nota, String username, AsyncCallback<Note> callback){
+                service.rimuoviUtenteCondivisione(nota.getId(),username, new AsyncCallback<Note>() {
+                    @Override
+                    public void onSuccess(Note fresh) {
+                        Window.alert("Utente rimosso dalla condivisione con successo!");
+
+                    
+
+                        // ricarica la vista con l'oggetto nota aggiornato
+                        loadVisualizzaNota(fresh, user);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nella rimozione dell'utente dalla condivisione: " + caught.getMessage());
+                    }
+                });
+
+            }
+
+
+            @Override
+            public void onRichiediLock(int noteId) {
+                service.tryAcquireLock(noteId, new AsyncCallback<LockToken>(){
+                    @Override
+                    public void onSuccess(LockToken token) {
+                        boolean isOwner = loggedInUser.getUsername().equals(nota.getOwnerUsername());
+                        view.enableEditing(isOwner);
+                        startLockHeartbeat(noteId); // il timer che fa renew ogni 30s
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        view.disableEditingWithMessage("Nota già in modifica da un altro utente: " + caught.getMessage());
+                        loadHomeView();
+                    } 
+                });
+            }
+
+        
+            @Override
+            public void trovaUtente2(Note nota,String username, AsyncCallback<Boolean> callback) {
+                    System.out.println("cerca utente" + username);
+
+                    service.cercaUtente2(nota,username,new AsyncCallback<Boolean>() {
+                    @Override
+                    public void onSuccess(Boolean exists) {
+                        if (Boolean.TRUE.equals(exists)) {
+
+                            callback.onSuccess(true);
+                            // eventuale logica di condivisione, es: service.condividiNota(...)
+                        } else {
+                            callback.onSuccess(false);
+                        }
+                    }
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nella ricerca utente: " + caught.getMessage());
+                    }
+                });
+            }
 
 
             @Override
@@ -388,28 +400,21 @@ public class NotingApp implements EntryPoint {
             }
                 
             });
-        
+            
         }
+
         @Override
-public void getNotaById(int noteId, AsyncCallback<Note> callback) {
-    service.getNotaById(noteId, callback);
-}
+        public void getNotaById(int noteId, AsyncCallback<Note> callback) {
+            service.getNotaById(noteId, callback);
+        }
 
     });
-                
-
-       
-      
-            
-
-    
-        
                 
     RootPanel.get().clear();
     RootPanel.get().add(view);
 }
 
-    // --- Lock heartbeat (semplice) ---
+// --- Lock heartbeat (semplice) ---
 private com.google.gwt.user.client.Timer lockTimer;
 private Integer editingNoteId;
 

@@ -12,14 +12,19 @@
         
         <g:Label text="Stato:" styleName="label2"/>
         
-        <g:HorizontalPanel spacing="10" styleName="button-panel">
+         <g:HorizontalPanel spacing="10" styleName="button-panel">
             <g:ListBox ui:field="statoBox" styleName="status"/>  
-            
             <g:Button ui:field="modificaButton" text="Modifica" styleName="bottoneLogin"/>
             <g:Button ui:field="salvaButton" text="Salva" styleName="bottoneLogin"/>
             <g:Button ui:field="eliminaButton" text="Elimina" styleName="bottoneLogin"/>
             <g:Button ui:field="creaUnaCopia" text="CreaCopia" styleName="bottoneLogin"/>
             <g:Button ui:field="annullaCondivisione" text="Annulla Condivisione" styleName="bottoneLogin"/>
+        </g:HorizontalPanel>
+
+        <!-- SOTTO il menù dei bottoni -->
+        <g:HorizontalPanel styleName="restore-panel">
+            <g:Button ui:field="restoreButton" text="⮌ Ripristina" styleName="bottoneLogin"/>
+            <g:ListBox ui:field="historyBox" styleName="hidden"/>
         </g:HorizontalPanel>
 
         <!-- Contenitore SEZIONE CONDIVISIONE (nascosto di default) -->

@@ -1,8 +1,12 @@
 package com.google.gwt.sample.noting.client;
 
+import java.util.List;
+
+import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.sample.noting.shared.Note;
+import com.google.gwt.sample.noting.shared.NoteMemento;
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
@@ -42,22 +46,91 @@ public class VisualizzaNotaView extends Composite {
     @UiField SuggestBox cercaUtenteDaAggiungere;
     @UiField Button confermaUtenteDaAggiungere;
 
+    @UiField Button restoreButton;
+    @UiField ListBox historyBox;
+
     private VisualizzaNotaViewListener listener;
     private Note nota; //così salviamo la nota corrente
     private User user; // per tenere traccia dello stato della nota
 
+    public void setNota(Note nota) {
+        this.nota = nota;
+        // Aggiorna i campi della UI con la nuova nota
+        titoloBox.setText(nota.getTitle());
+        contenutoArea.setText(nota.getContent());
+
+        // Aggiorna lo stato della nota nella combo box
+        if (nota.getStato() != null) {
+            for (int i = 0; i < statoBox.getItemCount(); i++) {
+                if (nota.getStato().name().equals(statoBox.getValue(i))) {
+                    statoBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+
+        updateShareSectionVisibility();
+        applyReadOnly();
+    }
+
     public VisualizzaNotaView(Note nota, User user) {
-    initWidget(uiBinder.createAndBindUi(this));
-    this.nota = nota;
-    this.user = user;
+        initWidget(uiBinder.createAndBindUi(this));
+        this.nota = nota;
+        this.user = user;
 
-    // Imposta i valori iniziali dei campi
-    setUpInitialUi();
+        // Imposta i valori iniziali dei campi
+        setUpInitialUi();
 
+        restoreButton.setVisible(false); 
+        historyBox.setVisible(false); 
+    
+        restoreButton.addClickHandler(event -> {
+            historyBox.setVisible(true); 
+            // Mostra la tendina
+            historyBox.removeStyleName("hidden");
+
+            // Carica la cronologia delle versioni
+            if (listener != null && nota != null) {
+                listener.onGetNoteHistory(nota.getId(), new AsyncCallback<List<NoteMemento>>() {
+                    @Override
+                    public void onSuccess(List<NoteMemento> history) {
+                        historyBox.clear();
+                        DateTimeFormat fmt = DateTimeFormat.getFormat("dd/MM/yyyy HH:mm");
+                        for (int i = 0; i < history.size(); i++) {
+                            NoteMemento m = history.get(i);
+                            historyBox.addItem(fmt.format(m.getTimestamp()) + " - " + m.getTitle(), String.valueOf(i));
+                        }
+                    }
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nel caricamento della cronologia: " + caught.getMessage());
+                    }
+                });
+            }
+        });
+
+        historyBox.addChangeHandler(event -> {
+            int selectedIndex = historyBox.getSelectedIndex();
+            if (selectedIndex >= 0 && listener != null) {
+                listener.onRestoreNote(nota.getId(), selectedIndex, new AsyncCallback<Note>() {
+                    @Override
+                    public void onSuccess(Note restored) {
+                        Window.alert("Nota ripristinata!");
+                        // Aggiorna la vista con la nota ripristinata
+                        setNota(restored);
+                    }
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nel ripristino: " + caught.getMessage());
+                    }
+                });
+            }
+        });
    
 
     }
 
+    
     private boolean isOwner() {
         return nota != null && user != null &&
             nota.getOwnerUsername() != null &&
@@ -83,16 +156,16 @@ public class VisualizzaNotaView extends Composite {
         titoloBox.setReadOnly(true);
         contenutoArea.setReadOnly(true);
         statoBox.setEnabled(false);
-        salvaButton.setVisible(false);
+        salvaButton.setVisible(true);
         salvaButton.setEnabled(true);
         modificaButton.setEnabled(true);
     }
     private void applyEdit(boolean owner) {
-    titoloBox.setReadOnly(false);
-    contenutoArea.setReadOnly(false);
-    statoBox.setEnabled(owner);
-    salvaButton.setVisible(true);
-    modificaButton.setEnabled(true);
+        titoloBox.setReadOnly(false);
+        contenutoArea.setReadOnly(false);
+        statoBox.setEnabled(owner);
+        salvaButton.setVisible(true);
+        modificaButton.setEnabled(true);
     }
 
 
@@ -204,14 +277,15 @@ public class VisualizzaNotaView extends Composite {
 
     @UiHandler("modificaButton")
     void onModificaClick(ClickEvent e) {
-    if (!canEdit()) {
-        Window.alert("Non hai i permessi per modificare questa nota.");
-        return;
-    }
-    if (listener != null && nota != null) {
-        modificaButton.setEnabled(false);
-        listener.onRichiediLock(nota.getId());
-     }
+        if (!canEdit()) {
+            Window.alert("Non hai i permessi per modificare questa nota.");
+            return;
+        }
+        if (listener != null && nota != null) {
+            modificaButton.setEnabled(false);
+            listener.onRichiediLock(nota.getId());
+        }
+        restoreButton.setVisible(true); 
     }
 
     public void enableEditing(boolean isOwner) {
@@ -271,6 +345,23 @@ void onSalvaClick(ClickEvent e) {
                 applyEdit(isOwner());
                 Window.alert("Errore nel recupero della nota aggiornata: " + caught.getMessage());
                 salvaButton.setEnabled(true);
+            }
+        });
+    }
+
+    if (historyBox.isVisible() && historyBox.getSelectedIndex() >= 0) {
+        int selectedIndex = historyBox.getSelectedIndex();
+        listener.onRestoreNote(nota.getId(), selectedIndex, new AsyncCallback<Note>() {
+            @Override
+            public void onSuccess(Note restored) {
+                Window.alert("Nota ripristinata!");
+                setNota(restored);
+                historyBox.setVisible(false);
+                restoreButton.setVisible(false);
+            }
+            @Override
+            public void onFailure(Throwable caught) {
+                Window.alert("Errore nel ripristino: " + caught.getMessage());
             }
         });
     }
@@ -345,6 +436,7 @@ void onSalvaClick(ClickEvent e) {
         sharedUsersPanel.add(new HTML("Nessun utente con cui è condivisa questa nota."));
     }
 }
+
 
 
    

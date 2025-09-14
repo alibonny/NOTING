@@ -18,11 +18,11 @@ import com.google.gwt.sample.noting.server.Core.SharingCoreImpl;
 import com.google.gwt.sample.noting.shared.LockStatus;
 import com.google.gwt.sample.noting.shared.LockToken;
 import com.google.gwt.sample.noting.shared.Note;
+import com.google.gwt.sample.noting.shared.NoteMemento;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NotingException;
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-
 
 public class NoteServiceImpl extends RemoteServiceServlet implements NoteService {
 
@@ -67,18 +67,36 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         comandi.creazioneNota(owner, titolo, contenuto, stato, utenti);
     }
 
+    
     @Override
-    public void updateNota(Note notaModificata)
-        throws NotingException{
+    public List<NoteMemento> getNoteHistory(int noteId) throws NotingException {
+        requireUser();
+        return DBManager.getNoteHistory(noteId);
+    }
+
+    @Override
+    public Note restoreNoteFromHistory(int noteId, int historyIndex) throws NotingException {
+        User user = requireUser();
+        ensureCanEdit(user, noteId);
+
+        NoteMemento memento = DBManager.getNoteHistoryEntry(noteId, historyIndex);
+        if (memento == null) throw new NotingException("Versione non trovata.");
+
+        Note nota = DBManager.restoreNoteFromMemento(noteId, memento);
+        System.out.println("Nota ripristinata da history (ID=" + noteId + ", versione=" + historyIndex + ")");
+        return nota;
+    }
+
+    //modifica effettuata per memento 
+    @Override
+    public void updateNota(Note notaModificata) throws NotingException{
 
         User user = requireUser();    
         String caller = user.getUsername();
         int noteId = notaModificata.getId();
 
-        if(noteId <= 0)throw new NotingException("ID nota non valido");
+        if(noteId <= 0) throw new NotingException("ID nota non valido");
 
-       
-        // 3) lock applicativo (resta qui o spostalo in LockingCore)
         var st = NoteLockManager.getInstance().status(noteId);
         if (st == null || !st.isLocked() || !caller.equals(st.getProprietarioLock())) {
             throw new NotingException("Devi avere il lock esclusivo per modificare questa nota.");
@@ -86,11 +104,15 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         var renewed = NoteLockManager.getInstance().renew(noteId, caller);
         if (renewed == null) throw new NotingException("Lock scaduto o non posseduto.");
 
-        // 4) delega al Core che fa l’update su DBManager
+        // --- AGGIUNTA: Salva la versione precedente nella cronologia ---
+        Note notaPrecedente = cerca.getById(noteId);
+        DBManager.saveNoteMemento(noteId, notaPrecedente);
+
+        // --- Update effettivo ---
         comandi.updateNote(caller, notaModificata);
 
         System.out.println("Nota aggiornata da " + caller +
-                " (ID=" + noteId + ", titolo: " + notaModificata.getTitle() + ")");
+            " (ID=" + noteId + ", titolo: " + notaModificata.getTitle() + ")");
     }
 
     @Override
@@ -198,9 +220,6 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         String me = requireUser().getUsername();
         sharing.removeUserFromShare(me, notaId, username);
     }
-
-
-
 
 
 
