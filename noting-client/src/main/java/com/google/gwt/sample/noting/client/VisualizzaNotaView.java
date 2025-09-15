@@ -1,7 +1,9 @@
 package com.google.gwt.sample.noting.client;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
+
 
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.core.client.GWT;
@@ -28,6 +30,7 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 
+
 public class VisualizzaNotaView extends Composite {
 
     interface VisualizzaNotaViewUiBinder extends UiBinder<Widget, VisualizzaNotaView> {}
@@ -45,16 +48,28 @@ public class VisualizzaNotaView extends Composite {
     @UiField TextBox newTagBox;
     @UiField ListBox tagBox;
     @UiField ListBox historyBox;
+    @UiField Label tagLabel;
+    @UiField HorizontalPanel tagControlsPanel;
+    @UiField Label topRightTagLabel;
+
 
     private VisualizzaNotaViewListener listener;
     private Note nota;
     private User user;
     private boolean isCreatingNewTag = false;
+    private List<String> selectedTags;
+    private String selectedTag;
 
     public VisualizzaNotaView(Note nota, User user) {
         initWidget(uiBinder.createAndBindUi(this));
         this.nota = nota;
         this.user = user;
+
+        this.selectedTags = (nota.getTags() != null) ? new ArrayList<>(nota.getTags()) : new ArrayList<>();
+        this.selectedTag = !this.selectedTags.isEmpty() ? this.selectedTags.get(0) : null;
+
+        GWT.log("Tag selezionati (" + this.selectedTags.size() + "): " + this.selectedTags.toString());
+       
 
         setUpInitialUi();
 
@@ -118,11 +133,18 @@ public class VisualizzaNotaView extends Composite {
             }
         }
 
+        selectedTags = (nota.getTags() != null) ? new ArrayList<>(nota.getTags()) : new ArrayList<>();
+        if (!selectedTags.isEmpty()) {
+            topRightTagLabel.setText("Tag: " + String.join(", ", selectedTags));
+        } else {
+            topRightTagLabel.setText("Tag:");
+        }
+
         updateShareSectionVisibility();
         applyReadOnly();
-        updateTagDisplay();
-        loadAvailableTags();
+        //updateTagDisplay();
     }
+        
 
     private boolean isOwner() {
         return nota != null && user != null &&
@@ -161,11 +183,10 @@ public class VisualizzaNotaView extends Composite {
         salvaButton.setVisible(true); // Lasciamo visibile Salva
         salvaButton.setEnabled(false); // Ma disabilitato in read-only
 
-        modificaButton.setEnabled(true);
+        tagControlsPanel.setVisible(false);
+        tagLabel.setVisible(false);
 
-        // Disabilita i bottoni dei tag quando non si è in modalità modifica
-        addTagButton.setEnabled(false);
-        eliminaTagButton.setEnabled(false);
+        modificaButton.setEnabled(true);
     }
 
     private void applyEdit(boolean owner) {
@@ -181,6 +202,13 @@ public class VisualizzaNotaView extends Composite {
         String contenuto = (nota != null && nota.getContent() != null) ? nota.getContent() : "";
         titoloBox.setText(titolo);
         contenutoArea.setText(contenuto);
+        topRightTagLabel.setText("Tag:"); 
+        if (nota.getTags() != null && !nota.getTags().isEmpty()) {
+            String allTags = String.join(", ", nota.getTags());
+            topRightTagLabel.setText("Tag: " + allTags);
+        } else {
+            topRightTagLabel.setText("Tag:");
+        }
 
         applyReadOnly();
 
@@ -200,19 +228,12 @@ public class VisualizzaNotaView extends Composite {
         } else if (statoBox.getItemCount() > 0) {
             statoBox.setSelectedIndex(0);
         }
+        
 
-        modificaButton.setEnabled(canEdit());
-        annullaCondivisione.setVisible(!isOwner());
-        updateShareSectionVisibility();
-
-        cercaUtenteDaAggiungere.setVisible(false);
-        confermaUtenteDaAggiungere.setVisible(false);
-        confermaUtenteDaAggiungere.setEnabled(true);
-
+        tagLabel.setVisible(false); 
+        tagBox.setVisible(false);
         newTagBox.setVisible(false);
-
-        loadAvailableTags();
-        updateTagDisplay();
+        addTagButton.setVisible(false);
         eliminaTagButton.setVisible(false);
     }
 
@@ -293,14 +314,29 @@ public class VisualizzaNotaView extends Composite {
             listener.onRichiediLock(nota.getId());
         }
         restoreButton.setVisible(true);
+
+        enableEditing(isOwner());
     }
 
    public void enableEditing(boolean isOwner) {
         applyEdit(isOwner);
-        // Abilita i bottoni dei tag solo dopo aver cliccato "Modifica"
+        salvaButton.setEnabled(true);
+
+        tagControlsPanel.setVisible(true);
+        tagLabel.setVisible(true);
+        tagBox.setVisible(true);
+        updateTagDisplay();
+        addTagButton.setVisible(true);      
+        eliminaTagButton.setVisible(true);  
         addTagButton.setEnabled(true);
         eliminaTagButton.setEnabled(true);
-        salvaButton.setEnabled(true); // Abilita il salvataggio
+        
+
+        if (nota.getTags() != null && !nota.getTags().isEmpty()) {
+            tagLabel.setText("Tag: ");
+        } else {
+            tagLabel.setText("Tag:");
+        }
     }
 
     public void disableEditingWithMessage(String message) {
@@ -324,14 +360,9 @@ public class VisualizzaNotaView extends Composite {
         }
 
         // aggiornamento dei tag prima del salvataggio
-        List<String> tagsToSave = new ArrayList<>();
-        String selectedTagValue = tagBox.getSelectedValue();
-        // Aggiungi il tag solo se è stato selezionato qualcosa di valido
-        if (selectedTagValue != null && !selectedTagValue.isEmpty() && !"new".equals(selectedTagValue)) {
-            tagsToSave.add(tagBox.getSelectedItemText());
+        if (selectedTags != null && !selectedTags.isEmpty()) {
+            nota.setTags(new ArrayList<>(selectedTags));
         }
-        nota.setTags(tagsToSave);
-        //
 
         applyReadOnly();
         salvaButton.setEnabled(false);
@@ -450,151 +481,168 @@ public class VisualizzaNotaView extends Composite {
     }
 
     private void updateTagDisplay() {
-        if (nota.getTags() != null && !nota.getTags().isEmpty()) {
-            String currentTag = nota.getTags().get(0);
-            boolean tagFound = false;
+    tagBox.clear();
+    tagBox.addItem("Seleziona tag", "");
+    tagBox.addItem("Crea nuovo", "new");
+
+    String[] defaultTags = {"Università", "Tempo libero", "Importante", "Promemoria", "Cose da fare"};
+    for (String tag : defaultTags) {
+        tagBox.addItem(tag, tag);
+    }
+
+    if (nota != null && nota.getTags() != null && !nota.getTags().isEmpty()) {
+        for (String tag : nota.getTags()) {
+            boolean exists = false;
             for (int i = 0; i < tagBox.getItemCount(); i++) {
-                if (currentTag.equals(tagBox.getValue(i))) {
-                    tagBox.setSelectedIndex(i);
-                    tagFound = true;
+                if (tagBox.getValue(i).equals(tag)) {
+                    exists = true;
                     break;
                 }
             }
-            if (!tagFound) {
-                tagBox.setSelectedIndex(0);
+            if (!exists) {
+                tagBox.addItem(tag, tag);
             }
-            eliminaTagButton.setVisible(true);
-        } else {
-            tagBox.setSelectedIndex(0);
-            eliminaTagButton.setVisible(false);
         }
-    }
 
-    private void loadAvailableTags() {
-        tagBox.clear();
-        String[] defaultTags = {"Università", "Tempo libero", "Importante", "Promemoria", "Cose da fare"};
-        for (String tag : defaultTags) {
-            tagBox.addItem(tag, tag);
-        }
-        tagBox.addItem("Crea nuovo", "new");
-
-        if (nota.getTags() != null && !nota.getTags().isEmpty()) {
-            String currentTag = nota.getTags().get(0);
-            for (int i = 0; i < tagBox.getItemCount(); i++) {
-                if (currentTag.equals(tagBox.getValue(i))) {
-                    tagBox.setSelectedIndex(i);
-                    break;
-                }
-            }
-        } else {
-            tagBox.setSelectedIndex(0);
-        }
+        String allTags = String.join(", ", nota.getTags());
+        topRightTagLabel.setText("Tag: " + allTags);
+    } else {
+        topRightTagLabel.setText("Tag:");
     }
+}
+
+   
 
     @UiHandler("tagBox")
     void onTagBoxChange(ChangeEvent event) {
     String selectedValue = tagBox.getSelectedValue();
+
     if ("new".equals(selectedValue)) {
         newTagBox.setVisible(true);
-        addTagButton.setVisible(true);
-        addTagButton.setText("Modifica Tag");
         newTagBox.setFocus(true);
         isCreatingNewTag = true;
-    } else {
+    } else if (!selectedValue.isEmpty()) {
         newTagBox.setVisible(false);
-        addTagButton.setVisible(true);
-        addTagButton.setText("Modifica Tag");
         isCreatingNewTag = false;
+        selectedTag = selectedValue;
     }
 }
 
     @UiHandler("addTagButton")
     void onAddTagClick(ClickEvent e) {
-    if (isCreatingNewTag) {
+        if (isCreatingNewTag) {
         String newTag = newTagBox.getText().trim();
         if (!newTag.isEmpty()) {
-            addTagToNote(newTag);
-            int lastIndex = tagBox.getItemCount() - 1;
-            tagBox.insertItem(newTag, newTag, lastIndex);
+            selectedTag = newTag;
+            if (!selectedTags.contains(selectedTag)) {
+                selectedTags.add(selectedTag);
+            }
+            nota.setTags(new ArrayList<>(selectedTags));
+            addTagToNote(selectedTag);
+
+            // aggiungo il nuovo tag 
+            boolean exists = false;
+            for (int i = 0; i < tagBox.getItemCount(); i++) {
+                if (tagBox.getValue(i).equals(newTag)) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                int lastIndex = tagBox.getItemCount() - 1;
+                tagBox.insertItem(newTag, newTag, lastIndex);
+            }
+
             newTagBox.setVisible(false);
             newTagBox.setText("");
             isCreatingNewTag = false;
-            tagBox.setSelectedIndex(tagBox.getItemCount() - 2); // Seleziona il tag appena aggiunto
-        }
-    } else {
-        String selectedValue = tagBox.getSelectedValue();
-        if (!selectedValue.isEmpty()) {
-            String selectedTag = tagBox.getSelectedItemText();
-            addTagToNote(selectedTag);
             tagBox.setSelectedIndex(0);
+
+            topRightTagLabel.setText("Tag: " + String.join(", ", selectedTags));
+        }
+            } else {
+                String selectedValue = tagBox.getSelectedValue();
+                if (!selectedValue.isEmpty() && !"new".equals(selectedValue)) {
+                    selectedTag = selectedValue;
+                    if (!selectedTags.contains(selectedTag)) {
+                        selectedTags.add(selectedTag);
+                    }
+                nota.setTags(new ArrayList<>(selectedTags));
+                addTagToNote(selectedTag);
+                tagBox.setSelectedIndex(0);
+
+            topRightTagLabel.setText("Tag: " + String.join(", ", selectedTags));
         }
     }
 }
 
     @UiHandler("eliminaTagButton")
-void onEliminaTagClick(ClickEvent e) {
-    if (listener != null) {
-        String tagToRemove = null;
-        if (nota.getTags() != null && !nota.getTags().isEmpty()) {
-            tagToRemove = nota.getTags().get(0);
-        }
+    void onEliminaTagClick(ClickEvent e) {
+    String selectedValue = tagBox.getSelectedValue();
+    if (selectedValue != null && !selectedValue.isEmpty() && !"new".equals(selectedValue)) {
+        String tagToRemove = selectedValue;
 
-        if (tagToRemove != null) {
-            listener.onRemoveTagFromNote(nota.getId(), tagToRemove, new AsyncCallback<Void>() {
-                @Override
-                public void onSuccess(Void result) {
-                    nota.getTags().clear();
-                    updateTagDisplay();
-                    Window.alert("Tag rimosso con successo!");
-                }
+        
+        selectedTags.remove(tagToRemove);
+        nota.setTags(new ArrayList<>(selectedTags));
 
-                @Override
-                public void onFailure(Throwable caught) {
-                    Window.alert("Errore nella rimozione del tag: " + caught.getMessage());
-                }
-            });
-        }
-    }
-}
-
-
-    private void addTagToNote(String tag) {
-        if (listener != null) {
-            if (isCreatingNewTag) {
-                listener.onCreateNewTag(tag, new AsyncCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        VisualizzaNotaView.this.addTagToNoteFinal(tag);
-                    }
-
-                    @Override
-                    public void onFailure(Throwable caught) {
-                        Window.alert("Errore nella creazione del tag: " + caught.getMessage());
-                    }
-                });
-            } else {
-                addTagToNoteFinal(tag);
-            }
-        }
-    }
-
-    private void addTagToNoteFinal(String tag) {
-        listener.onAddTagToNote(nota.getId(), tag, new AsyncCallback<Void>() {
+        
+        listener.onRemoveTagFromNote(nota.getId(), tagToRemove, new AsyncCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                if (nota.getTags() == null) {
-                    nota.setTags(new ArrayList<>());
-                } else {
-                    nota.getTags().clear();
-                }
-                nota.addTag(tag);
-                updateTagDisplay();
-                Window.alert("Tag '" + tag + "' aggiunto con successo!");
+                topRightTagLabel.setText("Tag: " + String.join(", ", selectedTags));
+
+                Window.alert("Tag rimosso con successo!");
             }
 
             @Override
             public void onFailure(Throwable caught) {
-                Window.alert("Errore nell'aggiunta del tag: " + caught.getMessage());
+                Window.alert("Errore nella rimozione del tag: " + caught.getMessage());
+            }
+        });
+    } else {
+        Window.alert("Seleziona un tag valido da rimuovere.");
+    }
+}
+
+
+
+    private void addTagToNote(String tag) {
+        listener.onAddTagToNote(nota.getId(), tag, new AsyncCallback<Void>() {
+        @Override
+        public void onSuccess(Void result) {
+            if (nota.getTags() == null) {
+                nota.setTags(new ArrayList<>());
+            }
+            if (!nota.getTags().contains(tag)) {
+                nota.addTag(tag);
+            }
+            updateTagDisplay();
+            Window.alert("Tag '" + tag + "' aggiunto con successo!");
+        }
+
+        @Override
+        public void onFailure(Throwable caught) {
+            Window.alert("Errore nell'aggiunta del tag: " + caught.getMessage());
+        }
+    });
+}
+
+    private void addTagToNoteFinal(String tag) {
+        listener.onAddTagToNote(nota.getId(), tag, new AsyncCallback<Void>() {
+        @Override
+        public void onSuccess(Void result) {
+            if (nota.getTags() == null) {
+                nota.setTags(new ArrayList<>());
+            }
+            nota.addTag(tag);
+            updateTagDisplay();
+            Window.alert("Tag '" + tag + "' aggiunto con successo!");
+        }
+
+        @Override
+        public void onFailure(Throwable caught) {
+            Window.alert("Errore nell'aggiunta del tag: " + caught.getMessage());
             }
         });
     }

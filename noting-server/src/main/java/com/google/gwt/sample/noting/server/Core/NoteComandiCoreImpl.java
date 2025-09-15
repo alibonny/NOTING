@@ -46,6 +46,7 @@ public class NoteComandiCoreImpl implements NoteComandiCore {
         n.setId(id);
         n.setOwnerUsername(owner);
         n.setUtentiCondivisi(destinatari);
+        n.setTags(tags);
 
         // salva su notesByOwner (copia difensiva)
         ConcurrentMap<String, List<Note>> notesByOwner = DBManager.getNotesDatabase();
@@ -77,6 +78,7 @@ public class NoteComandiCoreImpl implements NoteComandiCore {
         final ConcurrentMap<Integer, Note> noteById = DBManager.getNoteById();
         final ConcurrentMap<String, List<Note>> notesDB = DBManager.getNotesDatabase();
         final ConcurrentMap<Integer, List<String>> shareMap = DBManager.getListaCondivisione();
+        final ConcurrentMap<Integer, List<String>> tagsMap = DBManager.getNoteTags();
 
         // recupera e tieni owner originale
         Note esistente = noteById.get(noteId);
@@ -101,10 +103,19 @@ public class NoteComandiCoreImpl implements NoteComandiCore {
             newDest = new ArrayList<>();
         }
 
+        List<String> newTags = (notaModificata.getTags() == null ? List.<String>of()
+                : notaModificata.getTags()).stream()
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .distinct()
+            .collect(Collectors.toList());
+
         // crea nota aggiornata mantenendo id/owner
         Note aggiornata = new Note(newTitle, newContent, newStato, newDest, owner);
         aggiornata.setId(noteId);
         aggiornata.setOwnerUsername(owner);
+        aggiornata.setTags(newTags);
 
         // indice globale
         noteById.put(noteId, aggiornata);
@@ -125,6 +136,8 @@ public class NoteComandiCoreImpl implements NoteComandiCore {
             notesDB.put(owner, userNotes);
         }
 
+        // tag
+        tagsMap.put(noteId, new ArrayList<>(newTags));
 
 
         // condivisione

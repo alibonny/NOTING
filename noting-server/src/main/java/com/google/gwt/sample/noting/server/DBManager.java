@@ -20,6 +20,7 @@ import org.mapdb.Serializer;
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteMemento;
 import com.google.gwt.sample.noting.shared.Tag;
+import com.google.gwt.sample.noting.shared.NotingException; 
 
 @WebListener
 public class DBManager implements ServletContextListener {
@@ -78,7 +79,7 @@ public class DBManager implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         System.out.println("[DB] Inizializzazione MapDB (file)...");
-        final String dbPath = sce.getServletContext().getRealPath("/WEB-INF/noting-v3.db");
+        final String dbPath = sce.getServletContext().getRealPath("/WEB-INF/noting-v4.db");
         final File dbFile = new File(dbPath);
         dbFile.getParentFile().mkdirs();
 
@@ -316,19 +317,54 @@ public class DBManager implements ServletContextListener {
         ensureReady();
         List<String> tags = noteTags.computeIfAbsent(noteId, k -> new ArrayList<>());
         if (!tags.contains(tagName)) {
-            tags.add(tagName);
+            tags.add(tagName); 
+            Note n = noteById.get(noteId);
+            if (n != null) {
+                n.addTag(tagName);  
+            }
+             noteTags.put(noteId, tags); 
             db.commit();
         }
     }
 
-    public static void removeTagFromNote(int noteId, String tagName) {
-        ensureReady();
-        List<String> tags = noteTags.get(noteId);
-        if (tags != null) {
-            tags.remove(tagName);
-            db.commit();
-        }
+    public static void updateNoteTags(int noteId, List<String> tags) {
+    ensureReady();
+    Note nota = noteById.get(noteId);
+    if (nota == null) return;
+
+    List<String> currentTags = noteTags.getOrDefault(noteId, new ArrayList<>());
+    
+    nota.setTags(new ArrayList<>(tags));
+
+    currentTags.clear();
+
+    for (String tagName : tags) {
+        currentTags.add(tagName);
     }
+    
+    noteTags.put(noteId, currentTags);
+    db.commit();
+}
+
+    public static void removeTagFromNote(int noteId, String tagName) throws NotingException {
+    ensureReady();
+    List<String> tags = noteTags.get(noteId);
+
+    if (tags == null || !tags.contains(tagName)) {
+        throw new NotingException("Errore: il tag '" + tagName + "' non è associato alla nota.");
+    }
+    tags.remove(tagName);
+
+    Note n = noteById.get(noteId);
+    if (n != null) {
+        n.removeTag(tagName);
+        n.setTags(new ArrayList<>(tags));
+    }
+
+    noteTags.put(noteId, tags);
+    db.commit();
+}
+
 
     public static void removeAllTagsFromNote(int noteId) {
         ensureReady();

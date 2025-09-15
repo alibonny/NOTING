@@ -66,6 +66,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         throws NotingException {
         String owner = requireUser().getUsername();
         comandi.creazioneNota(owner, titolo, contenuto, stato, utenti, tags);
+        System.out.println("Nota creata da" + owner + "\ttitolo:" + titolo + "\ttag:" + tags + "\tstato:" + stato + "\tutenti condivisi:" + utenti);
     }
 
     @Override

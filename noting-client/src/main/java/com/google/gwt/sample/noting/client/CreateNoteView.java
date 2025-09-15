@@ -44,6 +44,7 @@ public class CreateNoteView extends Composite {
     @UiField TextBox newTagBox;
     @UiField Button confirmNewTagButton;
     @UiField Button addTagButton;
+    @UiField Label topRightTagLabel;
     
     private List<String> utentiList = new ArrayList<>(); // Lista per gli utenti condivisi
     private List<String> selectedTags = new ArrayList<>();
@@ -61,6 +62,8 @@ public class CreateNoteView extends Composite {
         utenteBox.setVisible(false); // Nascondi il campo utente inizialmente
         newTagBox.setVisible(false);
         confirmNewTagButton.setVisible(false);
+
+        topRightTagLabel.setText("Tag:"); 
 
         loadAvailableTags();
     }
@@ -121,15 +124,10 @@ public class CreateNoteView extends Composite {
         String newTag = newTagBox.getText().trim();
         if (!newTag.isEmpty()) {
             addTagToSelection(newTag);
-             int lastIndex = tagBox.getItemCount() - 1;
+            int lastIndex = tagBox.getItemCount() - 1;
             tagBox.insertItem(newTag, newTag, lastIndex);
 
-            for (int i = 0; i < tagBox.getItemCount(); i++) {
-                if (newTag.equals(tagBox.getValue(i))) {
-                    tagBox.setSelectedIndex(i);
-                    break;
-                }
-            }
+            tagBox.setSelectedIndex(0);
 
             newTagBox.setVisible(false);
             confirmNewTagButton.setVisible(false);
@@ -144,6 +142,8 @@ public class CreateNoteView extends Composite {
             selectedTags.add(tag);
             updateSelectedTagsLabel();
             Window.alert("Tag aggiunto: " + tag);
+            topRightTagLabel.setText("Tag: " + String.join(", ", selectedTags));
+            tagBox.setSelectedIndex(0);
         }
     }
 
@@ -172,23 +172,31 @@ public class CreateNoteView extends Composite {
         String statoSelezionato = statoBox.getSelectedItemText().replace(" ", "");
         Note.Stato stato = Note.Stato.valueOf(statoSelezionato);
 
-
         if (titolo.trim().isEmpty() || contenuto.trim().isEmpty()) {
             Window.alert("Titolo e contenuto non possono essere vuoti!");
             return;
         }
 
+            List<String> tagsToSave = new ArrayList<>();
+            for (int i = 0; i < tagBox.getItemCount(); i++) {
+                tagsToSave.add(tagBox.getItemText(i));
+            }
 
-        if (listener != null) {
-            listener.onSave(titolo, contenuto, stato, utentiList, selectedTags);
-     }
-    }
+            String newTag = newTagBox.getText().trim();
+            if (!newTag.isEmpty() && !tagsToSave.contains(newTag)) {
+                tagsToSave.add(newTag);
+            }
+            
+            if (listener != null) {
+                listener.onSave(titolo, contenuto, stato, utentiList, new ArrayList<>(selectedTags));
+                }
+            }
 
-   @UiHandler("backLink")
-    void onBackLinkClick(ClickEvent e) {
-        if (listener != null) {
-            listener.onBack();
-        }
+        @UiHandler("backLink")
+            void onBackLinkClick(ClickEvent e) {
+                if (listener != null) {
+                    listener.onBack();
+                }
     }
 
     @UiHandler("shareBtn")
@@ -220,7 +228,5 @@ public class CreateNoteView extends Composite {
 
     
 }
-
-
-   
+  
 }
