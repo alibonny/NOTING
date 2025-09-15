@@ -21,12 +21,19 @@
                 <g:TextBox ui:field="searchBox" styleName="search-input"/>
                 <g:Button ui:field="searchButton" text="Cerca" styleName="bottoneLogin"/>
             </g:HorizontalPanel>
+
+            <g:HorizontalPanel verticalAlignment="ALIGN_MIDDLE" spacing="5">
+                <g:Label text="Filtra per: " styleName="label2"/>
+                <g:ListBox ui:field="filterTypeBox" styleName="status"/>
+                <g:TextBox ui:field="filterValueBox" styleName="search-input"/>
+                <g:Button ui:field="applyFilterButton" text="Applica" styleName="bottoneLogin"/>
+            </g:HorizontalPanel>
         </g:HorizontalPanel>
 
         <!-- NUOVA barra filtri: Le mie note / Condivise con me -->
         <g:HorizontalPanel verticalAlignment="ALIGN_MIDDLE" spacing="8" styleName="filterBar">
-            <g:Button ui:field="myNotes" text="Le mie note" styleName="pillButton active"/>
-            <g:Button ui:field="condiviseConMe" text="Condivise con me" styleName="pillButton"/>
+            <g:Button ui:field="myNotes" text="Le mie note"/>
+            <g:Button ui:field="condiviseConMe" text="Condivise con me"/>
         </g:HorizontalPanel>
 
         <!-- Lista note -->

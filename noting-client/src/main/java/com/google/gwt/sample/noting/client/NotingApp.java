@@ -151,6 +151,21 @@ public class NotingApp implements EntryPoint {
 
             }
 
+            @Override
+            public void onFilterSearch(String currentView, String filterType, String filterValue) {
+                service.searchNotesByFilter(currentView, filterType, filterValue, new AsyncCallback<List<Note>>() {
+                    @Override
+                    public void onSuccess(List<Note> result) {
+                        homeView.setNotes(result);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        Window.alert("Errore nella ricerca con filtro: " + caught.getMessage());
+                    }
+                });
+            }
+
         });
 
         service.getNoteUtente(new AsyncCallback<List<Note>>() {
@@ -164,7 +179,6 @@ public class NotingApp implements EntryPoint {
                 Window.alert("Errore nel caricamento delle note: " + caught.getMessage());
             }
         });
-
 
         RootPanel.get().clear();
         RootPanel.get().add(homeView);

@@ -53,6 +53,8 @@ public interface NoteService extends RemoteService {
     void addTagToNote(int noteId, String tagName) throws NotingException;
     void removeTagFromNote(int noteId, String tagName) throws NotingException;
     void createNewTag(String tagName) throws NotingException;
+
+    List<Note> searchNotesByFilter(String currentView, String filterType, String filterValue) throws NotingException;
 }
 
 

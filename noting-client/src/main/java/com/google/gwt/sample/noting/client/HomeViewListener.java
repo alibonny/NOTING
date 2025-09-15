@@ -8,9 +8,9 @@ public interface HomeViewListener {
     void onLogout();
     void onNoteSelected(Note note, User user);
     void onSearch(String query);
-
-
-    // DUE METODI PER IL COMPORTAMENTO DEI DUE NUOVI BOTTONI
+    
     void myNotesSelected();
     void condiviseConMeSelected();
+
+    void onFilterSearch(String currentView, String filterType, String filterValue);
 }

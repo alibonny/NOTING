@@ -27,7 +27,7 @@
         
         <g:HorizontalPanel ui:field="tagControlsPanel" spacing="10" verticalAlignment="ALIGN_MIDDLE" styleName="button-panel">
             <g:Label ui:field="tagLabel" text="Tag:" styleName="label2"/>
-            <g:ListBox ui:field="tagBox" styleName="statusTag" />
+            <g:ListBox ui:field="tagBox" styleName="status" />
             <g:TextBox ui:field="newTagBox" styleName="note-input" visible="false" />
             <g:Button ui:field="addTagButton" text="Aggiungi Tag" styleName="bottoneLogin" />
             <g:Button ui:field="eliminaTagButton" text="Elimina Tag" styleName="bottoneLogin" />

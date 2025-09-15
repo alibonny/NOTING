@@ -2,7 +2,6 @@ package com.google.gwt.sample.noting.server.Core;
 
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -78,5 +77,39 @@ public class NoteCercaCoreImpl implements NoteCercaCore {
             }
         }
         return result;
+    }
+
+    @Override
+    public List<Note> searchByFilter(String owner, String currentView, String filterType, String filterValue) throws NotingException {
+        if (owner == null || owner.isBlank()) throw new NotingException("Utente non valido.");
+
+        List<Note> notesToFilter;
+
+        // 1. Seleziona la lista di note corretta in base alla vista
+        if ("sharedWithMe".equals(currentView)) {
+            notesToFilter = sharedWith(owner);
+        } else { // Di default o se è "myNotes"
+            notesToFilter = getNotesOf(owner);
+        }
+
+        // Se il valore del filtro è vuoto, non c'è bisogno di filtrare ulteriormente
+        if (filterValue == null || filterValue.trim().isEmpty()) {
+            return notesToFilter;
+        }
+
+        String q = filterValue.toLowerCase().trim();
+
+        // 2. Applica il filtro per autore o tag alla lista preselezionata
+        if ("autore".equalsIgnoreCase(filterType)) {
+            return notesToFilter.stream()
+                    .filter(n -> n.getOwnerUsername().toLowerCase().contains(q))
+                    .collect(Collectors.toList());
+        } else if ("tag".equalsIgnoreCase(filterType)) {
+            return notesToFilter.stream()
+                    .filter(n -> n.getTags().stream().anyMatch(tag -> tag.toLowerCase().contains(q)))
+                    .collect(Collectors.toList());
+        } else {
+            return new ArrayList<>(); // Tipo di filtro non valido
+        }
     }
 }

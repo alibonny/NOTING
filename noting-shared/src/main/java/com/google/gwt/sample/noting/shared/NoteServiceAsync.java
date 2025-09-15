@@ -62,9 +62,6 @@ public interface NoteServiceAsync {
     void tryAcquireLock(int noteId, AsyncCallback<LockToken> arg2);
     void updateNota(Note notaModificata, AsyncCallback<Void> arg2);
     
-    
-    
-    
     void cercaUtente2(Note nota, String username, AsyncCallback<Boolean> arg) ;
     void aggiungiCondivisione(int noteId, String username, AsyncCallback<Note> callback);
     void getNotaById(int noteId, AsyncCallback<Note> cb);
@@ -76,4 +73,6 @@ public interface NoteServiceAsync {
     void addTagToNote(int noteId, String tagName, AsyncCallback<Void> callback);
     void removeTagFromNote(int noteId, String tagName, AsyncCallback<Void> callback);
     void createNewTag(String tagName, AsyncCallback<Void> callback);
+
+    void searchNotesByFilter(String currentView, String filterType, String filterValue, AsyncCallback<List<Note>> callback);
 }

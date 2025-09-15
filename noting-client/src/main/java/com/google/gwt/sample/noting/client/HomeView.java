@@ -14,6 +14,7 @@ import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 
@@ -31,9 +32,14 @@ public class HomeView extends Composite {
     
     @UiField FlowPanel noteListPanel;
 
+    @UiField ListBox filterTypeBox;
+    @UiField TextBox filterValueBox;
+    @UiField Button applyFilterButton;
+
     private User user; // per tenere traccia dell'utente loggato
         
     private HomeViewListener listener;
+    private String currentView = "myNotes";
 
     public HomeView(User user) {
         initWidget(uiBinder.createAndBindUi(this));
@@ -41,6 +47,9 @@ public class HomeView extends Composite {
         this.user = user;                    
         usernameLabel.setText(
         (this.user!=null && this.user.getUsername()!=null) ? this.user.getUsername() : "(utente)");
+
+        filterTypeBox.addItem("Autore");
+        filterTypeBox.addItem("Tag");
     }
     
     
@@ -88,6 +97,16 @@ public class HomeView extends Composite {
         }
     }
   
+    @UiHandler("applyFilterButton")
+    void onApplyFilterClick(ClickEvent e) {
+        if (listener != null) {
+            String filterType = filterTypeBox.getSelectedItemText();
+            String filterValue = filterValueBox.getText();
+            // vista corrente
+            listener.onFilterSearch(currentView, filterType, filterValue);
+        }
+    }
+
     @UiHandler("logoutButton")
     void onLogoutClick(ClickEvent e) {
         if (listener != null) {
@@ -111,14 +130,15 @@ public class HomeView extends Composite {
     
     @UiHandler("myNotes")
     void onMyNotesClick(ClickEvent e) {
+        currentView = "myNotes"; // Imposta lo stato
         if (listener != null) {
             listener.myNotesSelected();
         }
-
     }
 
     @UiHandler("condiviseConMe")
     void onCondiviseConMeClick(ClickEvent e) {
+        currentView = "sharedWithMe"; // Imposta lo stato
         if (listener != null) {
             listener.condiviseConMeSelected();
         }
