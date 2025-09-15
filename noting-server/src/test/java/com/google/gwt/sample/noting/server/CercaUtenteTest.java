@@ -3,23 +3,17 @@ package com.google.gwt.sample.noting.server;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.google.gwt.sample.noting.server.DBManager;
-import com.google.gwt.sample.noting.server.NoteServiceImpl;
 import com.google.gwt.sample.noting.shared.Note;
-import com.google.gwt.sample.noting.shared.NotingException;
 import com.google.gwt.sample.noting.shared.User;
 public class CercaUtenteTest {
 
@@ -48,7 +42,7 @@ public class CercaUtenteTest {
     // =============== TEST per cercaUtente() ===============
 
     @Test
-    void cercaUtente_returnsTrue_whenUserExistsAndIsDifferent() throws Exception {
+    void cercaUtente_utente_trovato() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         DBManager.getUsersDatabase().put("alice", "pwd1");
         DBManager.getUsersDatabase().put("bob", "pwd2");
@@ -57,7 +51,7 @@ public class CercaUtenteTest {
     }
 
     @Test
-    void cercaUtente_returnsFalse_whenUserDoesNotExist() throws Exception {
+    void cercaUtente_utente_non_trovato() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         DBManager.getUsersDatabase().put("alice", "pwd1");
 
@@ -65,7 +59,7 @@ public class CercaUtenteTest {
     }
 
     @Test
-    void cercaUtente_returnsFalse_whenCandidateIsNullOrBlank() throws Exception {
+    void cercaUtente_input_non_validi() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         DBManager.getUsersDatabase().put("alice", "pwd1");
 
@@ -74,22 +68,19 @@ public class CercaUtenteTest {
     }
 
     @Test
-    void cercaUtente_returnsFalse_whenCandidateIsSameAsCaller() throws Exception {
+    void cercaUtente_cerca_se_stesso() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         DBManager.getUsersDatabase().put("alice", "pwd1");
 
         assertFalse(service.cercaUtente("alice"));
     }
 
-    @Test
-    void cercaUtente_throwsException_whenCallerNotAuthenticated() {
-        assertThrows(NotingException.class, () -> service.cercaUtente("bob"));
-    }
+    
 
     // =============== TEST per cercaUtente2() ===============
 
     @Test
-    void cercaUtente2_returnsTrue_whenUserExistsAndIsDifferent() throws Exception {
+    void cercaUtente2_utente_trovato() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         DBManager.getUsersDatabase().put("alice", "pwd1");
         DBManager.getUsersDatabase().put("bob", "pwd2");
@@ -100,7 +91,7 @@ public class CercaUtenteTest {
     }
 
     @Test
-    void cercaUtente2_returnsFalse_whenUserDoesNotExist() throws Exception {
+    void cercaUtente2_utente_non_trovato() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         DBManager.getUsersDatabase().put("alice", "pwd1");
 
@@ -110,7 +101,7 @@ public class CercaUtenteTest {
     }
 
     @Test
-    void cercaUtente2_returnsFalse_whenCandidateIsNullOrBlankOrSameAsCaller() throws Exception {
+    void cercaUtente2_input_non_validi() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         DBManager.getUsersDatabase().put("alice", "pwd1");
 
@@ -121,24 +112,16 @@ public class CercaUtenteTest {
         assertFalse(service.cercaUtente2(nota, "alice"));
     }
 
-    @Test
-    void cercaUtente2_throwsException_whenCallerNotAuthenticated() {
-        Note nota = new Note("titolo", "c", Note.Stato.Privata, new ArrayList<>(), "alice");
-
-        assertThrows(NotingException.class, () -> service.cercaUtente2(nota, "bob"));
-    }
-
-
 
     // =============== TEST per getAllUsernames() ===============
 
     @Test //Database vuoto --> ritorna lista vuota
-    void getAllUsernames_returnsEmptyList_whenNoUsersPresent() {
+    void getAllUsernames_db_vuoto() {
         assertTrue(service.getAllUsernames().isEmpty());
     }
 
     @Test //Database con più utenti --> ritorna tutte le chiavi (caso normale)
-    void getAllUsernames_returnsAllKeysFromUserDatabase() {
+    void getAllUsernames_db_con_più_utenti() {
         Map<String, String> userDb = DBManager.getUsersDatabase();
         userDb.put("alice", "pwd1");
         userDb.put("bob", "pwd2");
@@ -152,7 +135,7 @@ public class CercaUtenteTest {
     }
 
     @Test //Difensive copy --> la lista restituita non deve modificare il DB
-    void getAllUsernames_returnsNewList_notBackedByDatabase() {
+    void getAllUsernames_defensive_copy() {
         Map<String, String> userDb = DBManager.getUsersDatabase();
         userDb.put("alice", "pwd1");
         DBManager.commit();

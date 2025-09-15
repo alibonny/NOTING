@@ -44,7 +44,7 @@ public class AuthServiceTest {
     // -------------------------
 
     @Test
-    void register_reject_null_or_empty(){
+    void register_input_non_validi(){
         assertThrows(NotingException.class, () -> service.register(null, "x"));
         assertThrows(NotingException.class, () -> service.register("bob", null));
         assertThrows(NotingException.class, () -> service.register("   ", "x"));
@@ -52,7 +52,7 @@ public class AuthServiceTest {
     }
 
     @Test
-    void register_success_persists_user() throws Exception{
+    void register_successo() throws Exception{
         User u = service.register("newUser", "pwd123");
         assertNotNull(u);
         assertEquals("newUser", u.getUsername());
@@ -62,7 +62,7 @@ public class AuthServiceTest {
     }
 
     @Test
-    void register_duplicate_username_throws() throws Exception {
+    void register_username_esistente() throws Exception {
         service.register("alice", "a1");
         assertThrows(NotingException.class, () -> service.register("alice", "a2"));
     }
@@ -71,14 +71,14 @@ public class AuthServiceTest {
     // LOGIN
     // -------------------------
       @Test
-    void login_rejects_null_or_empty() {
+    void login_input_non_validi() {
         assertThrows(NotingException.class, () -> service.login(null, "x"));
         assertThrows(NotingException.class, () -> service.login("x", null));
         assertThrows(NotingException.class, () -> service.login(" ", " "));
     }
 
     @Test
-    void login_wrong_user_or_password_throws() {
+    void login_credenziali_errate() {
         DBManager.getUsersDatabase().put("mario", "ok");
         DBManager.commit();
 
@@ -87,7 +87,7 @@ public class AuthServiceTest {
     }
 
     @Test
-    void login_success_returns_user() throws Exception {
+    void login_credenziali_corrette() throws Exception {
         DBManager.getUsersDatabase().put("eva", "pwd");
         DBManager.commit();
 

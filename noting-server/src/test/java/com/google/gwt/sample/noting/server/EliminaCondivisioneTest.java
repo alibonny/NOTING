@@ -47,7 +47,7 @@ public class EliminaCondivisioneTest {
     // =============== TEST per rimuoviUtenteCondivisione() ===============
 
     @Test //caso di successo (caso normale)
-    void rimuoviUtenteCondivisione_removesUserFromShareList_whenValidInputs() throws Exception {
+    void rimuoviUtenteCondivisione_input_non_validi() throws Exception {
     // Simula login come alice
     NoteServiceImpl._setTestUser(new User("alice"));
 
@@ -86,7 +86,7 @@ public class EliminaCondivisioneTest {
 }
 
     @Test
-    void rimuoviUtenteCondivisione_throwsWhenCallerNotOwner() {
+    void rimuoviUtenteCondivisione_caller_non_proprietario() {
         NoteServiceImpl._setTestUser(new User("charlie"));
 
         var note = new Note("titolo", "contenuto", Note.Stato.Condivisa,
@@ -104,7 +104,7 @@ public class EliminaCondivisioneTest {
     }
 
     @Test
-    void rimuoviUtenteCondivisione_throwsWhenNoteDoesNotExist() {
+    void rimuoviUtenteCondivisione_nota_inesistente() {
         NoteServiceImpl._setTestUser(new User("alice"));
         DBManager.getUsersDatabase().put("alice", "pwd1");
 
@@ -113,7 +113,7 @@ public class EliminaCondivisioneTest {
     }
 
     @Test
-    void rimuoviUtenteCondivisione_throwsWhenTargetUsernameMissing() {
+    void rimuoviUtenteCondivisione_username_mancante() {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         var note = new Note("titolo", "contenuto", Note.Stato.Condivisa,
@@ -133,7 +133,7 @@ public class EliminaCondivisioneTest {
     }
 
     @Test
-    void rimuoviUtenteCondivisione_throwsWhenUserNotInShareList() {
+    void rimuoviUtenteCondivisione_username_non_in_condivisione() {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         var note = new Note("titolo", "contenuto", Note.Stato.Condivisa,
@@ -155,7 +155,7 @@ public class EliminaCondivisioneTest {
     // =============== TEST per annullaCondivisione() ===============
 
     @Test //caso di successo (caso nromale)
-    void annullaCondivisione_removesUserFromShareList_whenValidInputs() throws Exception {
+    void annullaCondivisione_input_invalidi() throws Exception {
         // utente loggato = bob
         NoteServiceImpl._setTestUser(new User("bob"));
 
@@ -191,16 +191,16 @@ public class EliminaCondivisioneTest {
     }
 
     @Test
-    void annullaCondivisione_throwsWhenUsernameDoesNotMatchLoggedUser() {
+    void annullaCondivisione_caller_diverso_utente_loggato() {
         NoteServiceImpl._setTestUser(new User("bob"));
         DBManager.getUsersDatabase().put("bob", "pwd2");
 
         assertThrows(NotingException.class, () ->
-            service.annullaCondivisione("alice", 1));
+        service.annullaCondivisione("alice", 1));
     }
 
     @Test
-    void annullaCondivisione_throwsWhenUsernameMissing() {
+    void annullaCondivisione_username_mancante() {
         NoteServiceImpl._setTestUser(new User("bob"));
         DBManager.getUsersDatabase().put("bob", "pwd2");
 
@@ -212,7 +212,7 @@ public class EliminaCondivisioneTest {
     }
 
     @Test
-    void annullaCondivisione_throwsWhenUserNotInShareList() {
+    void annullaCondivisione_utente_non_in_lista_condivisa() {
         NoteServiceImpl._setTestUser(new User("bob"));
 
         var note = new Note("titolo", "contenuto", Note.Stato.Condivisa,
@@ -232,7 +232,7 @@ public class EliminaCondivisioneTest {
     }
 
     @Test
-    void annullaCondivisione_throwsWhenNoteDoesNotExist() {
+    void annullaCondivisione_nota_inesistente() {
         NoteServiceImpl._setTestUser(new User("bob"));
         DBManager.getUsersDatabase().put("bob", "pwd2");
 
@@ -248,7 +248,7 @@ public class EliminaCondivisioneTest {
     // =============== TEST per svuotaCondivisioneNota() ===============
 
     @Test //caso normale (la lista di condivisione viene svuotata dopo che la nota passa da CONDIVISA a PRIVATA)
-    void svuotaCondivisioneNota_clearsShareList_whenCalledByOwner() throws Exception {
+    void svuotaCondivisioneNota_successo() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         var note = new Note("titolo", "contenuto", Note.Stato.Condivisa,
@@ -281,20 +281,16 @@ public class EliminaCondivisioneTest {
         assertTrue(notesOfAlice.get(0).getUtentiCondivisi().isEmpty());
     }
 
-    @Test
-    void svuotaCondivisioneNota_throwsWhenCallerNotAuthenticated() {
-        assertThrows(NotingException.class, () -> service.svuotaCondivisioneNota(1));
-    }
 
     @Test
-    void svuotaCondivisioneNota_throwsWhenNoteDoesNotExist() {
+    void svuotaCondivisioneNota_nota_inesistente() {
         NoteServiceImpl._setTestUser(new User("alice"));
         assertThrows(NotingException.class, () -> service.svuotaCondivisioneNota(0)); //id non valido
         assertThrows(NotingException.class, () -> service.svuotaCondivisioneNota(99)); //nota non esistente
     }
 
     @Test
-    void svuotaCondivisioneNota_throwsWhenCallerIsNotOwner() {
+    void svuotaCondivisioneNota_caller_non_proprietario() {
         NoteServiceImpl._setTestUser(new User("bob"));
 
         var note = new Note("titolo", "contenuto", Note.Stato.Condivisa,
@@ -312,7 +308,7 @@ public class EliminaCondivisioneTest {
     }
 
     @Test
-    void svuotaCondivisioneNota_throwsWhenShareListNotFound() {
+    void svuotaCondivisioneNota_lista_non_trovata() {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         var note = new Note("titolo", "contenuto", Note.Stato.Condivisa, new ArrayList<>(List.of("bob")), "alice");

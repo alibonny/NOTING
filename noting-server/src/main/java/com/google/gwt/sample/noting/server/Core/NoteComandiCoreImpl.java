@@ -58,11 +58,13 @@ public class NoteComandiCoreImpl implements NoteComandiCore {
         // salva sugli indici globali
         DBManager.getNoteById().put(id, n);
         DBManager.getListaCondivisione().put(id, new ArrayList<>(destinatari));
-        DBManager.saveNoteMemento(n.getId(), n);
+        NoteStoricoCore storico = new NoteStoricoCoreImpl();
+        storico.saveMemento(n.getId(), n);
 
         if (tags != null && !tags.isEmpty()) {
             for (String tag : tags) {
-                DBManager.addTagToNote(n.getId(), tag);
+                TagCore tag1 = new TagCoreImpl();
+                tag1.addTagToNote(n.getId(), tag);
             }
         }
 

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.google.gwt.sample.noting.server.Core.NoteComandiCoreImpl;
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NotingException;
 import com.google.gwt.sample.noting.shared.User;
@@ -24,6 +25,7 @@ public class EliminaServiceTest {
 
     private Path dbFile;
     private NoteServiceImpl service;
+    private NoteComandiCoreImpl comandi;
     private  final User TEST_USER = new User("thomas");
 
     @BeforeEach
@@ -32,9 +34,9 @@ public class EliminaServiceTest {
         DBManager.openForTests(dbFile);
         DBManager.resetForTests();
         service = new NoteServiceImpl();
+        comandi = new NoteComandiCoreImpl();
         NoteServiceImpl._clearTestUser();
-        NoteServiceImpl._setTestUser(new User("thomas")); // <<< QUI
-
+        NoteServiceImpl._setTestUser(new User("thomas")); 
 
 
         Note nota = new Note();
@@ -67,22 +69,19 @@ public class EliminaServiceTest {
     // DELETE NOTE
     // -------------------------
 
-
     // 1) input non validi -
-   /* @Test
+    @Test
     void delete_input_non_validi() {
-        assertThrows(NotingException.class, () -> service.eliminaNota(null, 1));
-        assertThrows(NotingException.class, () -> service.eliminaNota("   ", 1));
-        assertThrows(NotingException.class, () -> service.eliminaNota("alice", 0));
-        assertThrows(NotingException.class, () -> service.eliminaNota("alice", -10));
+        assertThrows(NotingException.class, () -> comandi.deleteNote(null, 1));
+      
     }
 
         // 2) nota non trovata -> eccezione
-    */@Test
+    @Test
     void delete_nota_non_trovata() {
        
         
-        assertThrows(NotingException.class, () -> service.eliminaNota("thomas", 99));
+        assertThrows(NotingException.class, () -> comandi.deleteNote("thomas", 99));
 
         assertTrue(DBManager.getNoteById().containsKey(1));
         assertNotNull(DBManager.getNotesDatabase().get("thomas"));
@@ -95,7 +94,7 @@ public class EliminaServiceTest {
     //3) nota trovata 
     @Test
     void delete_nota_trovata(){
-    assertDoesNotThrow(() -> service.eliminaNota("thomas", 1));
+    assertDoesNotThrow(() -> comandi.deleteNote("thomas", 1));
 
     // id=1 eliminato, id=2 resta
     assertFalse(DBManager.getNoteById().containsKey(1));

@@ -15,15 +15,18 @@ import com.google.gwt.sample.noting.server.Core.NoteCercaCore;
 import com.google.gwt.sample.noting.server.Core.NoteCercaCoreImpl;
 import com.google.gwt.sample.noting.server.Core.NoteComandiCore;
 import com.google.gwt.sample.noting.server.Core.NoteComandiCoreImpl;
+import com.google.gwt.sample.noting.server.Core.NoteStoricoCore;
+import com.google.gwt.sample.noting.server.Core.NoteStoricoCoreImpl;
 import com.google.gwt.sample.noting.server.Core.SharingCore;
 import com.google.gwt.sample.noting.server.Core.SharingCoreImpl;
+import com.google.gwt.sample.noting.server.Core.TagCore;
+import com.google.gwt.sample.noting.server.Core.TagCoreImpl;
 import com.google.gwt.sample.noting.shared.LockStatus;
 import com.google.gwt.sample.noting.shared.LockToken;
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteMemento;
 import com.google.gwt.sample.noting.shared.NoteService;
 import com.google.gwt.sample.noting.shared.NotingException;
-import com.google.gwt.sample.noting.shared.Tag;
 import com.google.gwt.sample.noting.shared.User;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
@@ -37,6 +40,8 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     private final NoteComandiCore comandi = new NoteComandiCoreImpl();
     private final NoteCercaCore cerca = new NoteCercaCoreImpl();
     private final SharingCore sharing = new SharingCoreImpl();
+    private final NoteStoricoCore storico = new NoteStoricoCoreImpl();
+    private final TagCore tag = new TagCoreImpl();
 
 
 
@@ -74,7 +79,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     public List<NoteMemento> getNoteHistory(int noteId) throws NotingException {
         requireUser();
         ensureOriginalMemento(noteId);
-        return DBManager.getNoteHistory(noteId);
+        return storico.getHistory(noteId);
     }
 
     @Override
@@ -82,10 +87,10 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         User user = requireUser();
         ensureCanEdit(user, noteId);
 
-        NoteMemento memento = DBManager.getNoteHistoryEntry(noteId, historyIndex);
+        NoteMemento memento = storico.getEntry(noteId, historyIndex);
         if (memento == null) throw new NotingException("Versione non trovata.");
 
-        Note nota = DBManager.restoreNoteFromMemento(noteId, memento);
+        Note nota = storico.restoreNoteFromMemento(noteId, memento);
         System.out.println("Nota ripristinata da history (ID=" + noteId + ", versione=" + historyIndex + ")");
         return nota;
     }
@@ -109,7 +114,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
         // --- AGGIUNTA: Salva la versione precedente nella cronologia ---
         Note notaPrecedente = cerca.getById(noteId);
-        DBManager.saveNoteMemento(noteId, notaPrecedente);
+        storico.saveMemento(noteId, notaPrecedente);
 
         // --- Update effettivo ---
         comandi.updateNote(caller, notaModificata);
@@ -165,14 +170,14 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     public void addTagToNote(int noteId, String tagName) throws NotingException {
         User user = requireUser();
         ensureCanEdit(user, noteId);
-        DBManager.addTagToNote(noteId, tagName);
+        tag.addTagToNote(noteId, tagName);
     }
     
     @Override
     public void removeTagFromNote(int noteId, String tagName) throws NotingException {
         User user = requireUser();
         ensureCanEdit(user, noteId);
-        DBManager.removeTagFromNote(noteId, tagName);
+        tag.removeTagFromNote(noteId, tagName);
     }
     
     @Override
@@ -181,12 +186,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         if (tagName == null || tagName.trim().isEmpty()) {
             throw new NotingException("Il nome del tag non può essere vuoto");
         }
-        
-        ConcurrentMap<String, Tag> tagsDB = DBManager.getTagsDatabase();
-        if (!tagsDB.containsKey(tagName)) {
-            tagsDB.put(tagName, new Tag(tagName));
-            DBManager.commit();
-        }
+        tag.createNewTag(tagName); 
     }
 
 
@@ -325,11 +325,11 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
    
    private void ensureOriginalMemento(int noteId) {
         // Se la history è vuota, crea il memento "Originale" dallo stato attuale della nota
-        List<NoteMemento> h = DBManager.getNoteHistory(noteId);
+        List<NoteMemento> h = storico.getHistory(noteId);
         if (h == null || h.isEmpty()) {
             Note n = DBManager.getNoteById().get(noteId);
             if (n != null) {
-                DBManager.saveNoteMemento(noteId, n);
+                storico.saveMemento(noteId, n);
             }
         }
     }

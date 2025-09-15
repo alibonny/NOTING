@@ -50,7 +50,7 @@ public class NotaCercaTest {
 
         // 1) Query mancante
     @Test
-    void searchNotes_throwsException_whenQueryIsNullOrEmpty() {
+    void searchNotes_query_non_valida() {
         NoteServiceImpl._setTestUser(new User("alice"));
         assertThrows(NotingException.class, () -> service.searchNotes(null));
         assertThrows(NotingException.class, () -> service.searchNotes(""));
@@ -59,13 +59,13 @@ public class NotaCercaTest {
 
     // 2) Utente mancante
     @Test
-    void searchNotes_throwsException_whenUserIsNotAuthenticated() {
+    void searchNotes_utente_non_loggato() {
         assertThrows(NotingException.class, () -> service.searchNotes("ciao"));
     }
 
     // 3) Utente presente ma senza note
     @Test
-    void searchNotes_returnsEmptyList_whenUserHasNoNotes() throws Exception {
+    void searchNotes_utente_senza_note() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         List<Note> result = service.searchNotes("qualcosa");
         assertNotNull(result);
@@ -74,7 +74,7 @@ public class NotaCercaTest {
 
     // 4) Utente e query validi con note che matchano
     @Test
-    void searchNotes_returnsMatchingNotes_whenTitleOrContentContainsQuery() throws Exception {
+    void searchNotes_successo() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         List<Note> aliceNotes = Arrays.asList(
@@ -103,7 +103,7 @@ public class NotaCercaTest {
 
 
     @Test
-    void getNotaById_returnsNoteDto_whenNoteExists() throws Exception {
+    void getNotaById_successo() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         var note = new Note("titolo", "contenuto", Note.Stato.Condivisa,
@@ -138,14 +138,14 @@ public class NotaCercaTest {
     }
 
     @Test
-    void getNotaById_throwsWhenNoteIdInvalid() {
+    void getNotaById_id_non_valido() {
         NoteServiceImpl._setTestUser(new User("alice"));
         assertThrows(NotingException.class, () -> service.getNotaById(0));
         assertThrows(NotingException.class, () -> service.getNotaById(-5));
     }
 
     @Test
-    void getNotaById_throwsWhenNoteDoesNotExist() {
+    void getNotaById_nota_inesistente() {
         NoteServiceImpl._setTestUser(new User("alice"));
         assertThrows(NotingException.class, () -> service.getNotaById(99));
     }

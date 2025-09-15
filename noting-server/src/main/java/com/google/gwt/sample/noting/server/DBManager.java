@@ -19,8 +19,7 @@ import org.mapdb.Serializer;
 
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteMemento;
-import com.google.gwt.sample.noting.shared.Tag;
-import com.google.gwt.sample.noting.shared.NotingException; 
+import com.google.gwt.sample.noting.shared.Tag; 
 
 @WebListener
 public class DBManager implements ServletContextListener {
@@ -42,7 +41,7 @@ public class DBManager implements ServletContextListener {
     private static org.mapdb.Atomic.Long noteIdSeq;
 
     // --- Lifecycle Servlet ---
-
+/* 
     public static void saveNoteMemento(int noteId, Note nota) {
         if (nota == null) return;
         LinkedList<NoteMemento> history = noteHistoryDatabase.computeIfAbsent(noteId, k -> new LinkedList<NoteMemento>());
@@ -75,7 +74,7 @@ public class DBManager implements ServletContextListener {
         }
         return null;
     }
-    
+    */
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         System.out.println("[DB] Inizializzazione MapDB (file)...");
@@ -312,7 +311,7 @@ public class DBManager implements ServletContextListener {
         ensureReady();
         return noteTags.getOrDefault(noteId, new ArrayList<>());
     }
-
+/* 
 public static void addTagToNote(int noteId, String tagName) throws NotingException {
     ensureReady();
     List<String> tags = noteTags.computeIfAbsent(noteId, k -> new ArrayList<>());
@@ -331,9 +330,9 @@ public static void addTagToNote(int noteId, String tagName) throws NotingExcepti
 
     noteTags.put(noteId, tags);
     db.commit();
-}
+}*/
 
-
+/* 
     public static void updateNoteTags(int noteId, List<String> tags) {
     ensureReady();
     Note nota = noteById.get(noteId);
@@ -352,7 +351,8 @@ public static void addTagToNote(int noteId, String tagName) throws NotingExcepti
     noteTags.put(noteId, currentTags);
     db.commit();
 }
-
+*/
+/* 
     public static void removeTagFromNote(int noteId, String tagName) throws NotingException {
     ensureReady();
     List<String> tags = noteTags.get(noteId);
@@ -371,12 +371,8 @@ public static void addTagToNote(int noteId, String tagName) throws NotingExcepti
     noteTags.put(noteId, tags);
     db.commit();
 }
+*/
 
 
-    public static void removeAllTagsFromNote(int noteId) {
-        ensureReady();
-        noteTags.remove(noteId);
-        db.commit();
-    }
 
 }

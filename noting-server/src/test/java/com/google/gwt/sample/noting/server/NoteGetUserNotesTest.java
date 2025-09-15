@@ -42,13 +42,13 @@ public class NoteGetUserNotesTest {
     }
  // 1) Nessun utente (né sessione, né TEST_USER) -> eccezione
     @Test
-    void getNoteUtente_throwsException_whenUserIsNotAuthenticated() {
+    void getNoteUtente_utente_non_loggato() {
         assertThrows(NotingException.class, () -> service.getNoteUtente());
     }
 
     // 2) Utente presente ma senza note -> lista vuota
     @Test
-    void getNoteUtente_returnsEmptyList_whenUserHasNoNotes() throws Exception {
+    void getNoteUtente_utente_senza_note() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         List<Note> notes = service.getNoteUtente();
         assertNotNull(notes);
@@ -57,7 +57,7 @@ public class NoteGetUserNotesTest {
 
     // 3) Utente con note -> restituisce copia difensiva (modifiche non impattano il DB)
     @Test
-    void getNoteUtente_returnsDefensiveCopy_notBackedByDatabase() throws Exception {
+    void getNoteUtente_defensive_db() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         List<Note> stored = Arrays.asList(
@@ -81,7 +81,7 @@ public class NoteGetUserNotesTest {
 
     // 4) Non restituisce note di altri utenti
     @Test
-    void getNoteUtente_returnsOnlyNotesOfCurrentUser() throws Exception {
+    void getNoteUtente_note_utente() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         DBManager.getNotesDatabase().put("alice", new ArrayList<>(Arrays.asList(
@@ -100,19 +100,19 @@ public class NoteGetUserNotesTest {
 
     // Note condivise con utente 
     @Test
-    void getCondiviseConMe_throwsException_whenUserIsNotAuthenticated() {
+    void getCondiviseConMe_utente_non_autenticato() {
         assertThrows(NotingException.class, () -> service.getCondiviseConMe());
     }
 
     @Test
-    void getCondiviseConMe_returnsEmptyList_whenThereAreNoShares() throws Exception {
+    void getCondiviseConMe_utente_senza_condivisioni() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
         // Nessuna voce nelle mappe
         assertTrue(service.getCondiviseConMe().isEmpty());
     }
 
     @Test
-    void getCondiviseConMe_returnsOnlyNotesSharedWithUser_excludingUserOwnNotes() throws Exception {
+    void getCondiviseConMe_successo() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         // Note globali (per ID)
@@ -136,7 +136,7 @@ public class NoteGetUserNotesTest {
     }
 
     @Test
-    void getCondiviseConMe_ignoresEntries_whenNoteIsMissingInNoteById() throws Exception {
+    void getCondiviseConMe_input_non_valido() throws Exception {
         NoteServiceImpl._setTestUser(new User("alice"));
 
         // Condivisione che punta a una nota inesistente
