@@ -45,9 +45,9 @@ public class DBManager implements ServletContextListener {
 
     public static void saveNoteMemento(int noteId, Note nota) {
         if (nota == null) return;
-        LinkedList<NoteMemento> history = noteHistoryDatabase.computeIfAbsent(noteId, k -> new LinkedList<>());
+        LinkedList<NoteMemento> history = noteHistoryDatabase.computeIfAbsent(noteId, k -> new LinkedList<NoteMemento>());
         // Limita la cronologia a max 3 versioni
-        if (history.size() >= 3) history.removeFirst();
+        if (history.size() >= 4) history.removeFirst();
         history.addLast(new NoteMemento(nota.getTitle(), nota.getContent(), new java.util.Date()));
     }
 

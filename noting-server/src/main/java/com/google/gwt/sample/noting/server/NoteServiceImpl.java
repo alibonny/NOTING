@@ -1,6 +1,7 @@
 package com.google.gwt.sample.noting.server;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -72,6 +73,7 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
     @Override
     public List<NoteMemento> getNoteHistory(int noteId) throws NotingException {
         requireUser();
+        ensureOriginalMemento(noteId);
         return DBManager.getNoteHistory(noteId);
     }
 
@@ -318,7 +320,16 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
 
    
    
-   
+   private void ensureOriginalMemento(int noteId) {
+    // Se la history è vuota, crea il memento "Originale" dallo stato attuale della nota
+    List<NoteMemento> h = DBManager.getNoteHistory(noteId);
+    if (h == null || h.isEmpty()) {
+        Note n = DBManager.getNoteById().get(noteId);
+        if (n != null) {
+            DBManager.saveNoteMemento(noteId, n);
+        }
+    }
+}
    
    
    
@@ -355,32 +366,55 @@ public class NoteServiceImpl extends RemoteServiceServlet implements NoteService
         return new LockStatus(st.getNoteId(), st.isLocked(), st.getProprietarioLock(), st.getExpiresDate());
     }
 
-    @Override
-    public LockToken tryAcquireLock(int noteId) throws NotingException {
-        User u = requireUser();
-        System.out.println("[LOCK] tryAcquire START note=" + noteId + " user=" + u.getUsername());
+@Override
+public LockToken tryAcquireLock(int noteId) throws NotingException {
+    User u = requireUser();
+    System.out.println("[LOCK] tryAcquire START note=" + noteId + " user=" + u.getUsername());
 
-        if (noteId <= 0) throw new NotingException("noteId non valido: " + noteId);
+    if (noteId <= 0) throw new NotingException("noteId non valido: " + noteId);
 
-        
-        var stBefore = NoteLockManager.getInstance().status(noteId);
-        System.out.println("[LOCK] status BEFORE: locked=" + stBefore.isLocked() +
-            " owner=" + stBefore.getProprietarioLock() + " exp=" + stBefore.getExpiresDate());
-            // (consigliato) consenti acquire solo se l'utente ha permessi di modifica
-            ensureCanEdit(u, noteId);
+    var stBefore = NoteLockManager.getInstance().status(noteId);
 
-            var tok = NoteLockManager.getInstance().tryAcquire(noteId, u.getUsername());
-        
-            if (tok == null) {
-                var st = NoteLockManager.getInstance().status(noteId);
-            System.out.println("[LOCK] tryAcquire DENY note=" + noteId + " reqUser=" + u.getUsername() +
-                " statusNow locked=" + st.isLocked() + " owner=" + st.getProprietarioLock() + " exp=" + st.getExpiresDate());
-            String owner = (st.getProprietarioLock() != null) ? st.getProprietarioLock() : "sconosciuto";
-            throw new NotingException("Nota in modifica da: " + owner);
-            }
-            System.out.println("[LOCK] ACQUIRE note=" + noteId + " by " + u.getUsername() + " exp=" + tok.getExpiresAt());
-            return new LockToken(tok.getNoteId(), tok.getUsername(), tok.getExpiresAt());
+    // Caso: lock già posseduto dallo stesso utente e ancora valido
+    if (stBefore.isLocked()
+        && u.getUsername().equals(stBefore.getProprietarioLock())
+        && stBefore.getExpiresDate() != null
+        && stBefore.getExpiresDate().after(new Date())) {
+
+        System.out.println("[LOCK] ALREADY OWNED note=" + noteId +
+                           " by " + u.getUsername() +
+                           " exp=" + stBefore.getExpiresDate());
+
+        // IMPORTANTE: ritorno diretto, NON proseguo oltre
+        return new LockToken(noteId, u.getUsername(), stBefore.getExpiresDate());
     }
+
+    System.out.println("[LOCK] status BEFORE: locked=" + stBefore.isLocked() +
+        " owner=" + stBefore.getProprietarioLock() + " exp=" + stBefore.getExpiresDate());
+
+    // Controllo permessi
+    ensureCanEdit(u, noteId);
+
+    // Tentativo di acquisizione lock
+    var tok = NoteLockManager.getInstance().tryAcquire(noteId, u.getUsername());
+
+    if (tok == null) {
+        var st = NoteLockManager.getInstance().status(noteId);
+        System.out.println("[LOCK] tryAcquire DENY note=" + noteId + " reqUser=" + u.getUsername() +
+            " statusNow locked=" + st.isLocked() + " owner=" + st.getProprietarioLock() + " exp=" + st.getExpiresDate());
+        String owner = (st.getProprietarioLock() != null) ? st.getProprietarioLock() : "sconosciuto";
+        throw new NotingException("Nota in modifica da: " + owner);
+    }
+
+    System.out.println("[LOCK] ACQUIRE note=" + noteId + " by " + u.getUsername() + " exp=" + tok.getExpiresAt());
+    System.out.println("\n\n\n\n[DEBUG] stBefore.isLocked=" + stBefore.isLocked()
+    + ", proprietario=" + stBefore.getProprietarioLock()
+    + ", user=" + u.getUsername()
+    + ", expires=" + stBefore.getExpiresDate());
+
+    return new LockToken(tok.getNoteId(), tok.getUsername(), tok.getExpiresAt());
+}
+
 
     @Override
     public LockToken renewLock(int noteId) throws NotingException {

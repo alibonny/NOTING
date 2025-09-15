@@ -434,7 +434,7 @@ private com.google.gwt.user.client.Timer lockTimer;
 private Integer editingNoteId;
 
 private void startLockHeartbeat(int noteId) {
-    stopLockHeartbeat();            // safety
+    stopLockHeartbeat(false);  // 🔹 non rilascia il lock!
     editingNoteId = noteId;
     lockTimer = new com.google.gwt.user.client.Timer() {
         @Override public void run() {
@@ -442,25 +442,32 @@ private void startLockHeartbeat(int noteId) {
                 @Override public void onSuccess(LockToken t) { /* ok */ }
                 @Override public void onFailure(Throwable caught) {
                     Window.alert("Lock perso: " + caught.getMessage());
-                    stopLockHeartbeat();
+                    stopLockHeartbeat(true); // qui sì, rilascio
                 }
             });
         }
     };
-    lockTimer.scheduleRepeating(90_000); // ogni 30s
+    lockTimer.scheduleRepeating(90_000);
 }
 
 private void stopLockHeartbeat() {
+    stopLockHeartbeat(true); // comportamento di default: rilascia
+}
+
+private void stopLockHeartbeat(boolean release) {
     if (lockTimer != null) { lockTimer.cancel(); lockTimer = null; }
     if (editingNoteId != null) {
-        final int toRelease = editingNoteId; // evita race se si azzera dopo
-        service.releaseLock(toRelease, new AsyncCallback<Void>() {
-            @Override public void onSuccess(Void r) { /* ok */ }
-            @Override public void onFailure(Throwable c) { /* ignora */ }
-        });
+        if (release) {
+            final int toRelease = editingNoteId;
+            service.releaseLock(toRelease, new AsyncCallback<Void>() {
+                @Override public void onSuccess(Void r) { /* ok */ }
+                @Override public void onFailure(Throwable c) { /* ignora */ }
+            });
+        }
         editingNoteId = null;
     }
 }
+
 
 
  }

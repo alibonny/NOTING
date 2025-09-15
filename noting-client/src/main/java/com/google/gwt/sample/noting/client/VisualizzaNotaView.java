@@ -1,6 +1,7 @@
 package com.google.gwt.sample.noting.client;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -9,6 +10,7 @@ import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.sample.noting.shared.LockToken;
 import com.google.gwt.sample.noting.shared.Note;
 import com.google.gwt.sample.noting.shared.NoteMemento;
 import com.google.gwt.sample.noting.shared.User;
@@ -85,10 +87,24 @@ public class VisualizzaNotaView extends Composite {
                     @Override
                     public void onSuccess(List<NoteMemento> history) {
                         historyBox.clear();
-                        DateTimeFormat fmt = DateTimeFormat.getFormat("dd/MM/yyyy HH:mm");
-                        for (int i = 0; i < history.size(); i++) {
-                            NoteMemento m = history.get(i);
-                            historyBox.addItem(fmt.format(m.getTimestamp()) + " - " + m.getTitle(), String.valueOf(i));
+
+                        historyBox.addItem("Seleziona versione", "-1");
+                         if (history == null || history.isEmpty()) return;
+
+                        historyBox.addItem("Originale", "0");
+
+                         for (int i = 1; i < history.size(); i++) {
+                    NoteMemento m = history.get(i);
+                    String label = "Modifica " + i; // opzionale: aggiungi timestamp se vuoi
+                    historyBox.addItem(label, String.valueOf(i));
+
+
+
+                      //  DateTimeFormat fmt = DateTimeFormat.getFormat("dd/MM/yyyy HH:mm");
+                       // historyBox.addItem(" ", "Seleziona una versione");
+                       // for (int i = 1; i < history.size(); i++) {
+                      //      NoteMemento m = history.get(i);
+                       //     historyBox.addItem(fmt.format(m.getTimestamp()) + " - " + m.getTitle(), String.valueOf(i));
                         }
                     }
 
@@ -102,12 +118,22 @@ public class VisualizzaNotaView extends Composite {
 
         historyBox.addChangeHandler(event -> {
             int selectedIndex = historyBox.getSelectedIndex();
+            if (selectedIndex <= 0) return; // 0 = "Seleziona versione"
+
+            String val = historyBox.getValue(selectedIndex);
+            int historyIndex;
+            try {
+                historyIndex = Integer.parseInt(val);
+            } catch (NumberFormatException e) {
+                return;
+            }
             if (selectedIndex >= 0 && listener != null) {
                 listener.onRestoreNote(nota.getId(), selectedIndex, new AsyncCallback<Note>() {
                     @Override
                     public void onSuccess(Note restored) {
-                        Window.alert("Nota ripristinata!");
                         setNota(restored);
+
+                        Window.alert("Nota ripristinata!");
                     }
 
                     @Override
@@ -141,7 +167,7 @@ public class VisualizzaNotaView extends Composite {
         }
 
         updateShareSectionVisibility();
-        applyReadOnly();
+        //applyReadOnly();
         //updateTagDisplay();
     }
         
@@ -228,6 +254,16 @@ public class VisualizzaNotaView extends Composite {
         } else if (statoBox.getItemCount() > 0) {
             statoBox.setSelectedIndex(0);
         }
+
+        modificaButton.setEnabled(canEdit());
+        annullaCondivisione.setVisible(false);
+        updateShareSectionVisibility();
+
+        cercaUtenteDaAggiungere.setVisible(false);
+        confermaUtenteDaAggiungere.setVisible(false);
+        confermaUtenteDaAggiungere.setEnabled(true);
+
+    
         
 
         tagLabel.setVisible(false); 
@@ -303,18 +339,20 @@ public class VisualizzaNotaView extends Composite {
         });
     }
 
+
     @UiHandler("modificaButton")
     void onModificaClick(ClickEvent e) {
+
         if (!canEdit()) {
             Window.alert("Non hai i permessi per modificare questa nota.");
             return;
         }
+
         if (listener != null && nota != null) {
-            modificaButton.setEnabled(false);
             listener.onRichiediLock(nota.getId());
+            modificaButton.setEnabled(false);
         }
         restoreButton.setVisible(true);
-
         enableEditing(isOwner());
     }
 
@@ -326,6 +364,7 @@ public class VisualizzaNotaView extends Composite {
         tagLabel.setVisible(true);
         tagBox.setVisible(true);
         updateTagDisplay();
+        updateShareSectionVisibility();
         addTagButton.setVisible(true);      
         eliminaTagButton.setVisible(true);  
         addTagButton.setEnabled(true);
@@ -392,7 +431,6 @@ public class VisualizzaNotaView extends Composite {
                         listener.onRestoreNote(nota.getId(), selectedIndex, new AsyncCallback<Note>() {
                             @Override
                             public void onSuccess(Note restored) {
-                                Window.alert("Nota ripristinata!");
                                 setNota(restored);
                                 historyBox.setVisible(false);
                                 restoreButton.setVisible(false);
