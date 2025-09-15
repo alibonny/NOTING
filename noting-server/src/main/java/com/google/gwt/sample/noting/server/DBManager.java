@@ -313,19 +313,26 @@ public class DBManager implements ServletContextListener {
         return noteTags.getOrDefault(noteId, new ArrayList<>());
     }
 
-    public static void addTagToNote(int noteId, String tagName) {
-        ensureReady();
-        List<String> tags = noteTags.computeIfAbsent(noteId, k -> new ArrayList<>());
-        if (!tags.contains(tagName)) {
-            tags.add(tagName); 
-            Note n = noteById.get(noteId);
-            if (n != null) {
-                n.addTag(tagName);  
-            }
-             noteTags.put(noteId, tags); 
-            db.commit();
-        }
+public static void addTagToNote(int noteId, String tagName) throws NotingException {
+    ensureReady();
+    List<String> tags = noteTags.computeIfAbsent(noteId, k -> new ArrayList<>());
+
+    if (tags.contains(tagName)) {
+        throw new NotingException("Errore: il tag '" + tagName + "' è già associato alla nota.");
     }
+
+    tags.add(tagName);
+
+    Note n = noteById.get(noteId);
+    if (n != null) {
+        n.addTag(tagName);
+        n.setTags(new ArrayList<>(tags)); // simile a come fai in removeTag
+    }
+
+    noteTags.put(noteId, tags);
+    db.commit();
+}
+
 
     public static void updateNoteTags(int noteId, List<String> tags) {
     ensureReady();
