@@ -256,15 +256,18 @@ public class VisualizzaNotaView extends Composite {
         }
 
         modificaButton.setEnabled(canEdit());
-        annullaCondivisione.setVisible(false);
+
+        if (!isOwner() && isSharedState()) {
+            annullaCondivisione.setVisible(true);
+        } else {
+            annullaCondivisione.setVisible(false);
+        }
+
         updateShareSectionVisibility();
 
         cercaUtenteDaAggiungere.setVisible(false);
         confermaUtenteDaAggiungere.setVisible(false);
         confermaUtenteDaAggiungere.setEnabled(true);
-
-    
-        
 
         tagLabel.setVisible(false); 
         tagBox.setVisible(false);
